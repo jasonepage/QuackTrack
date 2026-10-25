@@ -25,7 +25,7 @@ Design-around flags (places the material asked for something the tools cannot do
 - **D12 L2 and the organizer's browser.** L2 applies to every response not authorized by an organizer session. The organizer types the prompts.
 - **D13 Lost or broken key.** Session 1 forbade replacing a key and also any unsigned fallback, which strands a team whose key breaks. Design: the override (SRS.md FR-41, section 5.6), two chained ceremonies: an organizer authentication tap whose challenge is bound to the team, the old credential, and the reason, then a registration tap of the replacement key bound to the team's stored roster hash. It keeps L1 (both taps verified), L3 (the team has exactly one ACTIVE credential; the old one is REVOKED and never reused; the roster is unchanged), L4 (fresh challenges), and L5 (logged as `team.override`). The second ceremony's options come back from the first ceremony's verify, so each ceremony still has one options step and one verify step. Rejected: a backup key enrolled at enrollment, because it doubles the key pool cost, gives a team two live identities, and adds a second key to steal.
 - **D14 Times in sentences.** The server cannot know a viewer's time zone (Render runs in UTC). Error sentences carry no clock time. System posts carry an ISO time field, and the page fills `{deadline}` in local time.
-- **D15 Roster after enrollment (Session 3, October 25, 2026).** Session 1 locked the roster at enrollment, so a late joiner could never be added. Real organizers need to add and remove people. Design: adding a member after enrollment is its own ceremony (SRS.md FR-42): the organizer types the member, and a tap of the team's ACTIVE credential approves it, so no one can put a person on a team without that team's key (L1). Removing is an organizer action with no tap (FR-43), because removing a person cannot let anyone act as the team. Both are logged and recompute the team's roster hash. The Sign challenge now includes the roster hash (6.1), so a receipt's roster is the roster the team signed. Members cannot be added after SUBMITTED. Laws unchanged.
+- **D15 Members join themselves (Session 3, October 25, 2026).** Session 1 had the organizer type every roster at the desk and locked it at enrollment, so a late joiner could never be added and the organizer did busywork. Design: enrollment needs no roster. A member joins on /team by typing their own handle, display name, and role and tapping the team's key; that one tap is the FR-09 team tap with purpose `join`, its challenge bound to the team and the new member (6.9), so no one can put a person on a team without that team's key (L1). The first member to join a team with no Captain becomes Captain. Removing is an organizer action with no tap (SRS.md FR-43), because removing a person cannot let anyone act as the team. Joins and removals recompute the team's roster hash. The Sign challenge includes the roster hash (6.1), so a receipt's roster is the roster the team signed. Nobody joins after SUBMITTED. Laws unchanged.
 - **D16 Console plumbing (Session 3).** Organizers are not cryptographers. The hash chain stays (L5), but the console shows it as a `Log verified` badge, writes log entries as plain sentences, and puts hashes and raw entries behind expand controls. A broken chain still shows loud and red (L6).
 
 ## 2. Architecture
@@ -142,7 +142,7 @@ IDs are a prefix plus 8 random bytes as hex, for example `tm_9f3a1c02b4d5e6f7`. 
 | Field | Type | Notes |
 |---|---|---|
 | id | string | `cr_` prefix |
-| kind | `"org-setup"`, `"org-login"`, `"enroll"`, `"tap"`, `"sign"`, `"override-auth"`, `"override"`, `"roster-add"` | |
+| kind | `"org-setup"`, `"org-login"`, `"enroll"`, `"tap"`, `"sign"`, `"override-auth"`, `"override"` | |
 | purpose | `"enter"`, `"secret"` (parked), or null | tap only |
 | teamId | string or null | |
 | secretId | string or null | |
@@ -151,7 +151,7 @@ IDs are a prefix plus 8 random bytes as hex, for example `tm_9f3a1c02b4d5e6f7`. 
 | rosterHash | string or null | enroll |
 | contentHash | string or null | sign, hex |
 | overrideHash | string or null | override-auth and override, hex |
-| member | object or null | roster-add: `{handle, displayName, role}` as validated at options |
+| member | object or null | tap with purpose `join`: `{handle, displayName, role}` as validated at options |
 | keyFields | object or null | enroll and override: keySource, tagColor, tagLabel |
 | reason | `"lost"`, `"broken"`, or null | override-auth and override |
 | replacesSid | string or null | the session cookie ID present when options were requested, revoked on success |
@@ -239,10 +239,8 @@ Global rules for every endpoint:
 | POST /api/org/prompts | organizer | Read (org) | `{track, instructions, deadline}` | `{prompt}` | lengths, deadline future | Past deadline |
 | POST /api/org/teams | organizer | Read (org) | `{name, mode}` | `{team}` | name unique, mode enum, at most 40 teams | Duplicate team names; filling memory with teams |
 | DELETE /api/org/teams/:teamId | organizer | Read (org) | none | `{ok}` | team DRAFT | Deleting an enrolled team |
-| POST /api/org/teams/:teamId/roster | organizer desk | Read (org) | `{handle, displayName, role}` | `{team}` | DRAFT, OPEN, handle rule, handle unique, one Captain, size | One person on two teams |
+| (removed in Session 3) POST /api/org/teams/:teamId/roster | | | | | | Members join themselves through /api/tap with purpose `join` (D15) |
 | DELETE /api/org/teams/:teamId/roster/:handle | organizer | Read (org) | none | `{team}` | any state (FR-43); after enrollment the roster hash is recomputed | none: removing a person cannot let anyone act as the team |
-| POST /api/org/roster/add/options | organizer desk | Ceremony (org session required to start, team tap required to finish) | `{teamId, handle, displayName, role}` | `{ceremonyId, options}` | org session, team ENROLLED or REVEALED, FR-04 rules | Adding a person to a team without that team's key |
-| POST /api/org/roster/add/verify | captain at desk | Ceremony | `{ceremonyId, response}` | `{team}` | org session, delete pending, `response.id` equals the team's ACTIVE credential, counter, verify with the recomputed challenge, FR-04 rules and state re-checked after the last await | A replayed tap; another team's key approving an add |
 | POST /api/org/enroll/options | organizer desk | Ceremony (org session required to start) | `{teamId, keySource:"pool"\|"own-key"\|"own-passkey", tagColor?, tagLabel?, ownApproved?}` | `{ceremonyId, options, rosterHash}` | org session, DRAFT, roster rules, FR-40 rules (`own-passkey` only in passkey mode, both tags for `pool`, `ownApproved: true` otherwise) | Enrolling without the organizer present; an unapproved own key |
 | POST /api/org/enroll/verify | captain at desk | Ceremony | `{ceremonyId, response}` | `{team}` | delete pending, roster hash unchanged, verify, ID new, label rule | Key on two teams; passkey posing as key; roster swapped mid ceremony |
 | POST /api/org/override/options | organizer | Ceremony (org session required to start, organizer tap required to continue) | `{teamId, reason:"lost"\|"broken", confirm:"OVERRIDE", keySource, tagColor?, tagLabel?, ownApproved?}` | `{ceremonyId, options}` (organizer authentication options) | org session, team ENROLLED or REVEALED, confirm text, FR-40 rules | Replacing a team's key with only a stolen organizer cookie |
@@ -256,7 +254,7 @@ Global rules for every endpoint:
 | POST /api/org/teams/:teamId/mute | organizer | Read (org) | `{muted}` | `{team}` | team not DRAFT | none |
 | POST /api/org/reset | organizer | Read (org) | `{confirm:"RESET"}` | `{ok}` | exact text | Accidental wipe |
 | POST /api/org/seed | organizer | Read (org) | `{}` | `{ok}` | no teams exist | Seeding over a live event |
-| POST /api/tap/options | team | Ceremony | `{teamId, purpose:"enter"}` (`"secret"` and `secretId` parked with T10) | `{ceremonyId, options}` | team exists and is not DRAFT | Tapping for a draft team |
+| POST /api/tap/options | team | Ceremony | `{teamId, purpose:"enter"}`, or `{teamId, purpose:"join", handle, displayName, role}` (D15); `"secret"` and `secretId` parked with T10 | `{ceremonyId, options}` | team exists and is not DRAFT; for `join`, team not SUBMITTED and the FR-04 rules | Tapping for a draft team; joining a team without its key |
 | POST /api/tap/verify | team | Ceremony | `{ceremonyId, response}` | `{team:{id,name}, notice, prompt\|null, secret\|null}` + `qt_team` | delete pending, `response.id` equals the team's ACTIVE credential, counter check, verify | Wrong key, replay, cloned key, cookie as identity |
 | POST /api/tap/client-failure | team page or console | Ceremony support | `{ceremonyId, errorName}` | `{ok}` | pending exists, errorName up to 40 chars | Log flooding (rate limit, existing ceremony required) |
 | GET /api/team/room | team | Read | none | room object (FR-13) including the newest 100 team chat messages | team session | Reading another team's room |
@@ -345,12 +343,12 @@ Shared client steps: the page calls the options endpoint, passes `options` to `s
 6. After the last `await`, in one synchronous block: if the team is not ENROLLED or REVEALED, 409 E73. Otherwise append `team.override`, store the new credential ACTIVE, set the old one REVOKED, set `team.credentialId`, the key fields, `overrideCount + 1`, and `lastOverride`, revoke every session whose `teamId` is this team, and delete every pending ceremony for this team.
 7. Server returns the team. The console row shows the OVERRIDE tag. Drama posts the OVERRIDE line when T9 is built.
 
-### 5.7 Add a member after enrollment (SRS.md FR-42)
-1. Console to server: `POST /api/org/roster/add/options {teamId, handle, displayName, role}`. Server checks the org session, team ENROLLED or REVEALED, and the FR-04 rules, computes `memberHash` and the challenge (6.9), calls `generateAuthenticationOptions` with only the team's ACTIVE credential in `allowCredentials`, stores a pending `roster-add` ceremony with the member, and returns options.
-2. Browser: the captain taps the team's key. Any browser error: the page reports it through FR-11 and shows E80.
-3. Console to server: `POST /api/org/roster/add/verify {ceremonyId, response}`. Server deletes the pending ceremony (missing or expired: 410 E81), checks `response.id` equals the team's ACTIVE credential (else 401 E79, logs `tap.failed` purpose `roster`), checks the counter (6.5), and verifies with the recomputed challenge.
-4. After the last `await`, in one synchronous block: if the team is SUBMITTED, 409 E78; re-apply the FR-04 rules; append `roster.joined`; add the member; recompute `team.rosterHash`; update the counter.
-5. Server returns the team. The console row lists the new member.
+### 5.7 Join a team (SRS.md FR-42)
+1. Team page to server: `POST /api/tap/options {teamId, purpose:"join", handle, displayName, role}`. Server checks the team is ENROLLED or REVEALED and the FR-04 rules, picks the role (Captain when the team has none), draws a nonce, derives the challenge from `memberHash` (6.9), calls `generateAuthenticationOptions` with only the team's ACTIVE credential, stores a pending `tap` ceremony with purpose `join`, the member, and the nonce, and returns options.
+2. Browser: the member taps the team's key. Any browser error: the page reports it through FR-11 and shows E42.
+3. Team page to server: `POST /api/tap/verify {ceremonyId, response}`. Steps 5 to 8 of 5.2, with the expected challenge recomputed from the stored member and nonce.
+4. After the last `await`, in one synchronous block: if the team is SUBMITTED, 409 E78; re-apply the FR-04 rules; append `tap.ok` (purpose `join`), `roster.joined`, and `prompt.revealed` when 5.2 step 11 applies; add the member; recompute `team.rosterHash`; update the counter; mint the session with `memberHandle` set to the new member.
+5. Page navigates to /room.
 
 ## 6. Challenge construction and counters
 
@@ -406,10 +404,10 @@ Helpers in src/canon.js:
 3. Replacement: `challengeBytes = sha256(concat(utf8("quacktrack-override-reg-v1"), rosterHash, overrideHash, nonce2))`, where `rosterHash` is the team's stored roster hash, passed to `generateRegistrationOptions` with the team's mode settings from 6.4.
 4. Same encoding and assertion as 6.1 steps 5 to 7. At each verify the server recomputes the challenge from stored values and never accepts one from the client.
 
-### 6.9 Roster add challenge (D15)
-1. `memberHash = sha256(utf8(canon(["quacktrack-roster-add-v1", teamId, handleKey, norm(displayName), role])))`.
-2. `challengeBytes = sha256(concat(utf8("quacktrack-roster-add-v1"), memberHash, nonce))` with a fresh 32 byte nonce, passed to `generateAuthenticationOptions` with only the team's ACTIVE credential.
-3. Same encoding and assertion as 6.1 steps 5 to 7. At verify the server recomputes the challenge from the stored member and nonce. The tap approves exactly this member on exactly this team; the FR-04 rules are checked again after the tap, so a change made meanwhile is caught with its own sentence.
+### 6.9 Join challenge (D15)
+1. `memberHash = sha256(utf8(canon(["quacktrack-member-v1", teamId, handleKey, norm(displayName), role])))`.
+2. `challengeBytes = sha256(concat(utf8("quacktrack-join-v1"), memberHash, nonce))` with a fresh 32 byte nonce, passed to `generateAuthenticationOptions` with only the team's ACTIVE credential.
+3. Same encoding and assertion as 6.1 steps 5 to 7. At verify the server recomputes the challenge from the stored member and nonce. The tap approves exactly this member, with this role, on exactly this team; the FR-04 rules are checked again after the tap, so a change made meanwhile is caught with its own sentence.
 
 ## 7. Session design
 
@@ -485,7 +483,7 @@ Allowlist (log.append throws on an unknown action or an unlisted data key, which
 | deadline.unsubmitted | teamId, teamName, deadline |
 | demo.seeded | (none) |
 
-No action allows prompt track, prompt instructions, secret title, secret body, chat text, or question text. drama.js builds every system post from these entries only, so L2 holds for the commons by construction. `tap.failed` reason is `wrong_credential`, `revoked`, or `verify_failed`, and its purpose is `enter`, `override`, or `roster`. drama.js posts only for `team.enrolled`, `prompt.revealed`, `submission.signed`, `team.override`, `deadline.warning`, and `deadline.unsubmitted` (SRS.md FR-22).
+No action allows prompt track, prompt instructions, secret title, secret body, chat text, or question text. drama.js builds every system post from these entries only, so L2 holds for the commons by construction. `tap.failed` reason is `wrong_credential`, `revoked`, or `verify_failed`, and its purpose is `enter`, `join`, or `override`. drama.js posts only for `team.enrolled`, `prompt.revealed`, `submission.signed`, `team.override`, `deadline.warning`, and `deadline.unsubmitted` (SRS.md FR-22).
 
 How a human verifies the chain:
 1. On the console click "Download log", which saves `quacktrack-log.json`.
@@ -548,7 +546,7 @@ How a human verifies the chain:
 | src/drama.js | System posts from log entries; 15 s deadline timer | Read prompt or secret fields |
 | src/routes/org.js | Setup, login, console, prompts, assign, bundle, moderation, reset, seed, log export | Run without `requireOrg` except setup and login |
 | src/routes/enroll.js | Draft teams, roster, key source, enroll ceremony, roster changes after enrollment (T12), override ceremony (T11) | Add a member after enrollment without the team's tap; finish an override without the organizer tap |
-| src/routes/tap.js | Tap options, verify, client failure, reveal | Mint a session without verification |
+| src/routes/tap.js | Tap options, verify, join (D15), client failure, reveal | Mint a session without verification; add a member without a verified tap |
 | src/routes/team.js | Room, member select, download, logout | Read a team ID from the request |
 | src/routes/sign.js | Sign options and verify | Write a submission without verification |
 | src/routes/public.js | Public team list, receipt and checks | Return prompts, secrets, or chat |
@@ -615,7 +613,7 @@ How a human verifies the chain:
 | FR-39 | console.js, app.css | /api/org/console | T7 |
 | FR-40 | routes/enroll.js, webauthn.js | /api/org/enroll/* | T4 |
 | FR-41 | routes/enroll.js, webauthn.js, log.js | /api/org/override/* | T11 |
-| FR-42 | routes/enroll.js, webauthn.js, canon.js | /api/org/roster/add/* | T12 |
+| FR-42 | routes/tap.js, canon.js | /api/tap/* purpose join | T12 |
 | FR-43 | routes/enroll.js | DELETE /api/org/teams/:id/roster/:handle | T12 |
 | INV-01 | routes/tap.js, routes/sign.js | /api/tap/verify, /api/sign/verify | T5, T6 |
 | INV-02 | validate.js, routes/commons.js | /api/team/chat | T5, T9 |
@@ -628,7 +626,7 @@ How a human verifies the chain:
 | INV-09 | webauthn.js | /api/org/enroll/verify | T4 |
 | INV-10 | routes/sign.js | /api/sign/* | T6 |
 | INV-11 | routes/sign.js | /api/sign/verify | T6 |
-| INV-12 | routes/enroll.js, webauthn.js | /api/org/roster/add/* | T12 |
+| INV-12 | routes/tap.js | /api/tap/* purpose join | T12 |
 | INV-13 | webauthn.js | all verify rows | T3 |
 | INV-14 | canon.js, routes/sign.js, room.js | /api/sign/verify | T6 |
 | INV-15 | routes/public.js | /api/public/receipt/:id | T6 |
@@ -642,7 +640,7 @@ How a human verifies the chain:
 
 ## 12. Build tickets
 
-Sizes sum to 360 minutes (6 hours): T1 to T9 plus T11. T1 to T7 are the demo core (280 minutes). Build order: T1 to T8, then T12, then T11, then T9. T12 (30 minutes, added in Session 3) is outside the 360 minutes and protected by cut line 4. T10 (15 minutes) was cut by cut line 1 in Session 2 and is not in the 360 minutes. Every test that needs keys uses key A (yellow) and key B (blue). For two team sessions at once, use a normal Chrome window and an incognito window.
+Sizes sum to 360 minutes (6 hours): T1 to T9 plus T11. T1 to T7 are the demo core (280 minutes). Build order (changed in Session 3): T1 to T5, then T12 (self join, built right after T5 at the human's request), then T6 to T8, then T11, then T9. T12 (30 minutes) is outside the 360 minutes. T10 (15 minutes) was cut by cut line 1 in Session 2 and is not in the 360 minutes. Every test that needs keys uses key A (yellow) and key B (blue). For two team sessions at once, use a normal Chrome window and an incognito window.
 
 ### T1 Skeleton and guards (25 min). Depends on: nothing.
 Build: package.json, .gitignore, LICENSE, README.md (both modes, env table, setup link note, single device note, re-enroll note), server.js, src/config.js, src/errors.js (with the SRS.md section 4A dictionary), src/store.js, src/validate.js (JSON body limit, unknown field rejection, rate limiter with the NFR-11 keys), host and origin guard, the RP_ID boot check (NFR-02), `/vendor/swa/`, public/index.html, public/css/app.css, public/js/api.js.
@@ -737,14 +735,15 @@ Done when:
 5. On /team pick Heron and tap key A: the browser refuses and the E42 banner shows. Tap key B: the room opens with `Your key was replaced by organizer override.`
 6. Download the log and run `node scripts/verify-log.js quacktrack-log.json`: `Chain OK` plus `OVERRIDE at entry <seq>: Team Heron.`
 
-### T12 Roster changes after enrollment (30 min, Session 3). Depends on: T4 (and T5 for the room check). Build after T8.
-Build: `Add with key` on an enrolled team's row (handle, display name, role), the two roster add endpoints in src/routes/enroll.js (5.7), `memberHash` and the roster add challenge in src/canon.js (6.9), `roster.joined` in the log allowlist, removal after enrollment (FR-43) with the roster hash recomputed, and the E78 to E81 banners.
+### T12 Members join themselves, organizer removes (30 min, Session 3). Depends on: T5. Built right after T5.
+Build: purpose `join` on the tap endpoints in src/routes/tap.js (5.7), `memberHash` and the join challenge in src/canon.js (6.9), `roster.joined` in the log allowlist, "I'm new to this team" on /team, enrollment with no roster (FR-05), removal in any state with the roster hash recomputed (FR-43), and the console roster without the desk entry form. The T4 desk roster steps (T4 tests 1 to 3 roster parts) are superseded.
 Done when:
-1. On enrolled Mallard's row type `octocat`, Builder, click Add with key, and tap key B: the browser refuses and the banner says `The key tap was cancelled. Nothing was added.` The roster is unchanged.
-2. Again, tap key A: octocat appears on the row and the log tail shows `roster.joined`.
-3. Replay the verify request: `This tap expired. Click Add with key again.`
-4. Remove octocat: no tap, the row no longer lists them, the log tail shows `roster.removed`.
-5. After Mallard signs, Add with key: `Team Mallard already submitted. New members cannot be added now.` Remove a member: allowed, and Mallard's receipt still shows the roster it signed.
+1. Create Team Mallard with no members and enroll it with key A: ENROLLED with an empty roster.
+2. On /team pick Mallard, choose I'm new, type `-bad-`: `That is not a valid GitHub handle.`
+3. Type `jasonepage`, any role, tap key B: the E42 banner, roster unchanged. Tap key A: the room opens with jasonepage selected, the console row lists jasonepage as Captain, the log shows `roster.joined`.
+4. Join `octocat` as Builder with key A: listed as Builder. Join `octocat` again on Team Teal: `octocat is already on Team Mallard's roster.`
+5. Remove octocat on the console: no tap, the row no longer lists them, the log shows `roster.removed`.
+6. After Mallard submits (T6), joining gives `Team Mallard already submitted. New members cannot be added now.`
 
 ### S1 Hosted mode on Render (stretch, outside the 350 minutes, only after the demo and submission are safe)
 Build: nothing in code. Create a Render Starter web service from the public repo, start command `npm start`, env vars `ORIGIN=https://<service>.onrender.com`, `RP_ID=<service>.onrender.com`, `SESSION_SECRET` and `GEMINI_API_KEY` entered in the Render dashboard, `AI_PROVIDER=gemini`.
@@ -757,7 +756,7 @@ Apply in this order when a ticket runs 20 minutes over or when fewer minutes rem
 1. **First cut: T10** (notes and secrets). APPLIED in Session 2, because adding T11 pushed the total past 360 minutes. Not in the demo. No board panel is built. The README records FR-17 to FR-19 and INV-07 as not built.
 2. **Second cut: T9** (team chat, commons, drama, moderation). Not in the demo. If T9 is partly built, keep what passes and cut in this order: moderation, then trade offers, then the deadline timer.
 3. **Third cut: T11** (key override). Not in the demo. If cut, the README says a team whose key is lost or broken cannot sign in this build, and the organizer records it by hand. Never add an unsigned fallback instead (L3).
-4. **Fourth cut: T12** (roster changes after enrollment). Not in the demo. If cut, late joiners are not added and removal works only on draft teams, as in Session 1.
+4. **Fourth cut: T12** (self join). Built in Session 3, so not cut. If it ever had to be removed, the organizer would type rosters at the desk again as in Session 1.
 5. **Inside T8 only: the Gemma path**, when T8 itself runs 20 minutes over. Keep Gemini BYOK and the fallback list. Do not cut the Gemini path: the Best Open-Source AI Project entry needs a working AI feature.
 
 Never cut T1 to T7. If the core runs late, cut inside it in this order and never inside a ceremony: receipt page styling, the Download receipt JSON button, the Download log button (export with `curl` and the organizer cookie instead), the Team Solo passkey test in T4.

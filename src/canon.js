@@ -104,6 +104,18 @@ function signChallenge(contentHashBuf, nonce) {
   return sha256(input);
 }
 
+// ---------- 6.9 Join: a member joins a team with its key (D15) ----------
+// member: { handle, displayName, role }. The tap approves exactly this
+// member, with this role, on exactly this team.
+function memberHash(teamId, member) {
+  return sha256(utf8(canon(['quacktrack-member-v1', teamId, String(member.handle).toLowerCase(), norm(member.displayName), member.role])));
+}
+function joinChallenge(memberHashBuf, nonce) {
+  need32('memberHash', memberHashBuf);
+  need32('nonce', nonce);
+  return sha256(Buffer.concat([utf8('quacktrack-join-v1'), memberHashBuf, nonce]));
+}
+
 // ---------- 6.8 Override: authorization and replacement ----------
 function overrideHash(teamId, oldCredentialId, reason) {
   return sha256(utf8(canon(['quacktrack-override-v1', teamId, oldCredentialId, reason])));
@@ -135,6 +147,8 @@ module.exports = {
   submissionCanonical,
   contentHash,
   signChallenge,
+  memberHash,
+  joinChallenge,
   overrideHash,
   overrideAuthChallenge,
   overrideRegChallenge,

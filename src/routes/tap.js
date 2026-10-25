@@ -1,6 +1,7 @@
 'use strict';
-// src/routes/tap.js: the team tap ceremony, prompt reveal, and the client
-// failure report (SRS.md FR-09, FR-10, FR-11; SDS.md 5.2).
+// src/routes/tap.js: the team tap ceremony, joining a team with its key,
+// prompt reveal, and the client failure report (SRS.md FR-09, FR-10,
+// FR-11, FR-42; SDS.md 5.2, 5.7).
 // Ceremony tier: the cookie is never used for identity here. The team is
 // the one whose ACTIVE credential produced the verified assertion (L1).
 
@@ -9,11 +10,12 @@ const express = require('express');
 const { store } = require('../store');
 const { failWith, notice } = require('../errors');
 const { body, teamCeremonyLimit, clientFailureLimit } = require('../validate');
-const { b64u } = require('../canon');
+const canon = require('../canon');
+const { b64u } = canon;
 const log = require('../log');
 const sessions = require('../sessions');
 const wa = require('../webauthn');
-const { getTeam } = require('./enroll');
+const { getTeam, currentRosterHash, ROLES, MAX_MEMBERS } = require('./enroll');
 
 const router = express.Router();
 const SYSTEM = Object.freeze({ kind: 'system', id: null });
@@ -28,13 +30,34 @@ function isRevokedOf(team, credentialId) {
   return Boolean(c && c.ownerId === team.id && c.state === 'REVOKED');
 }
 
-// ---------- FR-09 options ----------
+// FR-04 roster rules for a join (FR-42). Returns a failure or null.
+// A team with no Captain makes the joiner its Captain.
+function joinProblem(team, handle, role) {
+  if (team.state === 'SUBMITTED') return { code: 'ADD_AFTER_SUBMIT', vars: { team: team.name } };
+  const key = handle.toLowerCase();
+  for (const t of store.teams.values()) {
+    if (t.roster.some((m) => m.handleKey === key)) return { code: 'HANDLE_TAKEN', vars: { handle, team: t.name } };
+  }
+  const max = team.mode === 'passkey' ? 1 : MAX_MEMBERS;
+  if (team.roster.length >= max) return { code: 'ROSTER_FULL', vars: { team: team.name } };
+  if (role === 'Captain' && team.roster.some((m) => m.role === 'Captain')) return { code: 'SECOND_CAPTAIN', vars: { team: team.name } };
+  return null;
+}
+
+function roleFor(team, asked) {
+  return team.roster.some((m) => m.role === 'Captain') ? asked : 'Captain';
+}
+
+// ---------- FR-09 options (and FR-42 join) ----------
 router.post(
   '/options',
   teamCeremonyLimit,
   body({
     teamId: { type: 'string', label: 'Team', min: 1, max: 40 },
-    purpose: { type: 'string', label: 'Purpose', oneOf: ['enter'] },
+    purpose: { type: 'string', label: 'Purpose', oneOf: ['enter', 'join'] },
+    handle: { type: 'string', label: 'GitHub handle', rule: 'handle', required: false },
+    displayName: { type: 'string', label: 'Display name', min: 1, max: 40, required: false },
+    role: { type: 'string', label: 'Role', oneOf: ROLES, oneOfCode: 'BAD_ROLE', required: false },
   }),
   async (req, res) => {
     const team = getTeam(req.body.teamId);
@@ -42,13 +65,29 @@ router.post(
     const cred = activeCredential(team);
     if (team.state === 'DRAFT' || !cred) return failWith(res, 'NOT_ENROLLED', { team: team.name });
 
-    const challenge = wa.freshChallenge();
+    const b = req.body;
+    let member = null;
+    let nonce = null;
+    let challenge;
+    if (b.purpose === 'join') {
+      if (b.handle === undefined) return failWith(res, 'BAD_TYPE', { label: 'GitHub handle' });
+      if (b.displayName === undefined) return failWith(res, 'BAD_TYPE', { label: 'Display name' });
+      if (b.role === undefined) return failWith(res, 'BAD_TYPE', { label: 'Role' });
+      const role = roleFor(team, b.role);
+      const problem = joinProblem(team, b.handle, role);
+      if (problem) return failWith(res, problem.code, problem.vars);
+      member = { handle: b.handle, displayName: canon.norm(b.displayName), role };
+      nonce = wa.freshChallenge();
+      challenge = canon.joinChallenge(canon.memberHash(team.id, member), nonce); // SDS.md 6.9
+    } else {
+      challenge = wa.freshChallenge();
+    }
     // SDS.md 5.2: discouraged for key mode (a tap), preferred for passkeys.
     const uv = team.mode === 'key' ? 'discouraged' : 'preferred';
     const options = await wa.authenticationOptions(cred, uv, challenge);
     // The team session already in this browser, if any, is replaced on success.
     const { sid } = sessions.sidFromCookie(req, 'team');
-    const rec = wa.newPending('tap', { teamId: team.id, purpose: 'enter', challenge: b64u(challenge), replacesSid: sid });
+    const rec = wa.newPending('tap', { teamId: team.id, purpose: b.purpose, challenge: b64u(challenge), nonce, member, replacesSid: sid });
     res.json({ ok: true, ceremonyId: rec.id, options });
   }
 );
@@ -91,9 +130,12 @@ router.post(
       return failWith(res, 'COUNTER_BACKWARDS');
     }
 
+    // A join recomputes its challenge from the stored member and nonce, so
+    // the tap approves exactly that member (SDS.md 6.9).
+    const expected = rec.purpose === 'join' ? b64u(canon.joinChallenge(canon.memberHash(team.id, rec.member), rec.nonce)) : rec.challenge;
     let newCounter;
     try {
-      newCounter = await wa.verifyAuthentication(response, rec.challenge, cred);
+      newCounter = await wa.verifyAuthentication(response, expected, cred);
     } catch (err) {
       console.error('[tap] assertion did not verify:', err.message);
       return failed('verify_failed');
@@ -101,12 +143,19 @@ router.post(
 
     // After the last await: re-check, then log, then write, in one block.
     if (!store.teams.has(team.id) || activeCredential(team) !== cred) return failed('revoked');
+    if (rec.purpose === 'join') {
+      const problem = joinProblem(team, rec.member.handle, rec.member.role);
+      if (problem) return failWith(res, problem.code, problem.vars);
+    }
     const prompt = team.assignedPromptId ? store.prompts.get(team.assignedPromptId) : null;
     const reveal = team.state === 'ENROLLED' && Boolean(prompt);
     const actor = { kind: 'team', id: team.id };
     const now = new Date().toISOString();
 
     log.append(actor, 'tap.ok', { teamId: team.id, purpose: rec.purpose, credentialId: cred.id, counter: newCounter });
+    if (rec.purpose === 'join') {
+      log.append(actor, 'roster.joined', { teamId: team.id, handle: rec.member.handle, role: rec.member.role, credentialId: cred.id });
+    }
     if (reveal) log.append(actor, 'prompt.revealed', { teamId: team.id, teamName: team.name, promptId: prompt.id, revealedAt: now });
 
     cred.counter = newCounter;
@@ -114,7 +163,18 @@ router.post(
       const old = store.sessions.get(rec.replacesSid);
       if (old && old.kind === 'team') sessions.revoke(rec.replacesSid);
     }
-    sessions.mint(res, 'team', { teamId: team.id, credentialId: cred.id });
+    if (rec.purpose === 'join') {
+      team.roster.push({
+        handle: rec.member.handle,
+        handleKey: rec.member.handle.toLowerCase(),
+        displayName: rec.member.displayName,
+        role: rec.member.role,
+        addedAt: now,
+      });
+      team.rosterHash = currentRosterHash(team).toString('hex');
+    }
+    const session = sessions.mint(res, 'team', { teamId: team.id, credentialId: cred.id });
+    if (rec.purpose === 'join') session.memberHandle = rec.member.handle;
     if (reveal) {
       team.revealedAt = now;
       team.state = 'REVEALED';

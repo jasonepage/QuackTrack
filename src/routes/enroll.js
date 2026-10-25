@@ -126,51 +126,19 @@ router.delete('/teams/:teamId', sessions.requireOrg, query({}), (req, res) => {
   res.json({ ok: true });
 });
 
-// ---------- FR-04 Draft roster entry ----------
-router.post(
-  '/teams/:teamId/roster',
-  sessions.requireOrg,
-  body({
-    handle: { type: 'string', label: 'GitHub handle', rule: 'handle' },
-    displayName: { type: 'string', label: 'Display name', min: 1, max: 40 },
-    role: { type: 'string', label: 'Role', oneOf: ROLES, oneOfCode: 'BAD_ROLE' },
-  }),
-  (req, res) => {
-    const team = getTeam(req.params.teamId);
-    if (!team) return failWith(res, 'TEAM_NOT_FOUND');
-    if (team.state !== 'DRAFT' || team.rosterState !== 'OPEN') return failWith(res, 'ROSTER_LOCKED', { team: team.name });
-    const handle = req.body.handle;
-    const handleKey = handle.toLowerCase();
-    for (const t of store.teams.values()) {
-      if (t.roster.some((m) => m.handleKey === handleKey)) return failWith(res, 'HANDLE_TAKEN', { handle, team: t.name });
-    }
-    if (req.body.role === 'Captain' && team.roster.some((m) => m.role === 'Captain')) {
-      return failWith(res, 'SECOND_CAPTAIN', { team: team.name });
-    }
-    const max = team.mode === 'passkey' ? 1 : MAX_MEMBERS;
-    if (team.roster.length >= max) return failWith(res, 'ROSTER_FULL', { team: team.name });
-
-    log.append(ORG_ACTOR, 'roster.added', { teamId: team.id, handle, role: req.body.role });
-    team.roster.push({
-      handle,
-      handleKey,
-      displayName: canon.norm(req.body.displayName),
-      role: req.body.role,
-      addedAt: new Date().toISOString(),
-    });
-    res.json({ ok: true, team: teamRow(team) });
-  }
-);
-
+// ---------- FR-43 Remove a member at any time ----------
+// Members join themselves with the team's key (tap.js, D15). The organizer
+// can remove anyone at any time with no tap: removing a person cannot let
+// anyone act as the team. A receipt keeps the roster the team signed.
 router.delete('/teams/:teamId/roster/:handle', sessions.requireOrg, query({}), (req, res) => {
   const team = getTeam(req.params.teamId);
   if (!team) return failWith(res, 'TEAM_NOT_FOUND');
-  if (team.state !== 'DRAFT' || team.rosterState !== 'OPEN') return failWith(res, 'ROSTER_LOCKED', { team: team.name });
   const handleKey = String(req.params.handle).toLowerCase();
   const member = team.roster.find((m) => m.handleKey === handleKey);
   if (!member) return failWith(res, 'NOT_ON_ROSTER', { handle: String(req.params.handle).slice(0, 39), team: team.name });
   log.append(ORG_ACTOR, 'roster.removed', { teamId: team.id, handle: member.handle });
   team.roster = team.roster.filter((m) => m !== member);
+  if (team.state !== 'DRAFT') team.rosterHash = currentRosterHash(team).toString('hex');
   res.json({ ok: true, team: teamRow(team) });
 });
 
@@ -191,15 +159,6 @@ function checkKeySource(team, b) {
   return { keyFields: { keySource: b.keySource, tagColor: null, tagLabel: null } };
 }
 
-// Roster rules at enrollment (FR-05). Returns a failure or null.
-function checkRosterReady(team) {
-  if (team.roster.length === 0) return { code: 'NEED_MEMBER', vars: { team: team.name } };
-  if (team.roster.filter((m) => m.role === 'Captain').length !== 1) return { code: 'NEED_CAPTAIN', vars: { team: team.name } };
-  const max = team.mode === 'passkey' ? 1 : MAX_MEMBERS;
-  if (team.roster.length > max) return { code: 'ROSTER_FULL', vars: { team: team.name } };
-  return null;
-}
-
 // ---------- FR-05 Enroll ceremony ----------
 router.post(
   '/enroll/options',
@@ -216,8 +175,6 @@ router.post(
     const team = getTeam(req.body.teamId);
     if (!team) return failWith(res, 'TEAM_NOT_FOUND');
     if (team.state !== 'DRAFT' || team.rosterState !== 'OPEN') return failWith(res, 'ROSTER_LOCKED', { team: team.name });
-    const rosterProblem = checkRosterReady(team);
-    if (rosterProblem) return failWith(res, rosterProblem.code, rosterProblem.vars);
     const source = checkKeySource(team, req.body);
     if (source.code) return failWith(res, source.code, source.vars);
 
@@ -300,4 +257,4 @@ router.post(
   }
 );
 
-module.exports = { router, teamRow, teamRows, getTeam, keySourceText, ROLES };
+module.exports = { router, teamRow, teamRows, getTeam, keySourceText, currentRosterHash, ROLES, MAX_MEMBERS };

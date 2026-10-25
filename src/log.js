@@ -24,6 +24,7 @@ const ALLOWLIST = Object.freeze({
   'team.deleted': ['teamId', 'teamName'],
   'roster.added': ['teamId', 'handle', 'role'],
   'roster.removed': ['teamId', 'handle'],
+  'roster.joined': ['teamId', 'handle', 'role', 'credentialId'],
   'team.enrolled': ['teamId', 'teamName', 'credentialId', 'label', 'rosterHash', 'keySource', 'tagColor', 'tagLabel', 'keyFingerprint'],
   'prompt.created': ['promptId', 'deadline'],
   'prompt.assigned': ['teamId', 'promptId'],

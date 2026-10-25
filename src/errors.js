@@ -32,8 +32,6 @@ const ROWS = [
   ['E25', 'SECOND_CAPTAIN', 409, "{team} already has a Captain."],
   ['E26', 'ROSTER_FULL', 409, "{team}'s roster is full."],
   ['E27', 'ROSTER_LOCKED', 409, "{team}'s roster is locked."],
-  ['E28', 'NEED_CAPTAIN', 409, "{team} needs exactly one Captain before enrolling."],
-  ['E29', 'NEED_MEMBER', 409, "{team} needs at least one member before enrolling."],
   ['E30', 'TAG_MISSING', 400, "Enter the tag color and the key's pool label before enrolling a pool key."],
   ['E31', 'OWN_KEY_NOT_APPROVED', 400, "Tick the box that says you checked this team in person before enrolling their own key."],
   ['E32', 'KEY_TAKEN', 409, "This key is already enrolled to another team or the organizer. Use a different key."], // 409 and banner
@@ -83,9 +81,6 @@ const ROWS = [
   ['E76', 'SECRET_BODY', 400, "A secret needs a body."], // FR-18, parked
   ['E77', 'SECRET_NOT_FOUND', 404, "That secret does not exist for {team}."], // FR-19, parked
   ['E78', 'ADD_AFTER_SUBMIT', 409, "{team} already submitted. New members cannot be added now."], // FR-42
-  ['E79', 'WRONG_KEY_ADD', 401, "That key is not {team}'s key. Nothing was added."], // FR-42
-  ['E80', 'ADD_CANCELLED', null, "The key tap was cancelled. Nothing was added."], // FR-42, FR-11 banner
-  ['E81', 'ADD_EXPIRED', 410, "This tap expired. Click Add with key again."], // FR-42
 ];
 
 // Notices (yellow, not failures) and the one terminal only line, from SRS.md section 4A.

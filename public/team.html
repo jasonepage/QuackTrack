@@ -14,10 +14,36 @@
   </header>
 
   <main class="wrap doc">
-    <h1>Team tap in</h1>
-    <p class="lede">Pick your team, then tap your team's key.</p>
-    <p id="tap-now" class="tap-now" hidden>Tap your key now</p>
-    <div id="teams" class="team-picker"></div>
+    <section id="pick">
+      <h1>Team tap in</h1>
+      <p class="lede">Pick your team. Have your team's key ready.</p>
+      <div id="teams" class="team-picker"></div>
+    </section>
+
+    <section id="who" hidden>
+      <h1 id="who-team"></h1>
+      <p id="tap-now" class="tap-now" hidden>Tap your key now</p>
+      <div id="who-choice" class="who-choice">
+        <button id="existing" class="action-button" type="button">I'm on this team<small>Tap the key to open your room.</small></button>
+        <button id="new" class="choice-button" type="button">I'm new to this team<small>Add yourself with your GitHub handle.</small></button>
+      </div>
+
+      <form id="join" class="prompt-form" autocomplete="off" hidden>
+        <label>GitHub handle <input id="join-handle" maxlength="39" autocapitalize="off" spellcheck="false" required></label>
+        <label>Display name <input id="join-name" maxlength="40" required></label>
+        <label>Role
+          <select id="join-role">
+            <option>Builder</option>
+            <option>Designer</option>
+            <option>Presenter</option>
+          </select>
+        </label>
+        <p class="muted">The first person to join a team is its Captain.</p>
+        <button class="action-button" type="submit">Join and tap key</button>
+      </form>
+
+      <p class="after-action"><button id="back" class="link-button" type="button">Pick a different team</button></p>
+    </section>
   </main>
 </body>
 </html>

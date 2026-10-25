@@ -25,7 +25,7 @@ Laws (never break, priority order as listed): L1 server authority, identity only
 ## How to work here
 
 1. Before every task, read GENRE.md, PRODUCT.md, SRS.md, and SDS.md in full. Do not rely on a summary of them.
-2. Do one build ticket per session. The tickets are in SDS.md section 12, and the cut lines are in section 13. Build in this order: T1 to T8, then T12, then T11, then T9. T10 is cut (cut line 1) and is not built. Do not start a ticket whose dependencies are not done.
+2. Do one build ticket per session. The tickets are in SDS.md section 12, and the cut lines are in section 13. Build in this order: T1 to T5, then T12 (built in Session 3 right after T5), then T6 to T8, then T11, then T9. T10 is cut (cut line 1) and is not built. Do not start a ticket whose dependencies are not done.
 3. Build only what the ticket says. If the ticket needs something the SDS does not define, stop and say so.
 4. Before you say a ticket is done, run its "Done when" test yourself as far as you can without a physical key (start the server, call the endpoints with curl, read the log). Then hand the human the steps that need a physical key and wait for their result.
 5. Never add anything that breaks a law. If a request from the human conflicts with a law, say which law and why, and do not comply silently. Lower numbered laws win over higher numbered laws.
@@ -62,8 +62,8 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/sessions.js | Mint, read, expire, and revoke sessions, set cookies | Accept a session ID that fails the HMAC check |
 | src/webauthn.js | Wrap SimpleWebAuthn calls and the pending ceremony map | Reuse a challenge |
 | src/routes/org.js | Organizer setup, login, console, prompts, assign, reset, seed | Answer a request without an organizer session |
-| src/routes/enroll.js (roster changes after enrollment in T12, override in T11) | Draft teams, roster edits, key source, enroll ceremony, roster add with the team's tap, override ceremony | Add a member after enrollment without the team's key tap, or finish an override without the organizer tap |
-| src/routes/tap.js | Team tap ceremony, reveal, client failure report | Mint a session without a verified assertion |
+| src/routes/enroll.js (override added in T11) | Draft teams, key source, enroll ceremony, roster removal, override ceremony | Put a member on a roster (members join through tap.js), or finish an override without the organizer tap |
+| src/routes/tap.js | Team tap ceremony, join (T12), reveal, client failure report | Mint a session without a verified assertion |
 | src/routes/team.js | Read tier team room, member select, download | Take a team ID from the request |
 | src/routes/sign.js (planned T6) | Sign ceremony and submission creation | Create a submission without a verified assertion |
 | src/routes/public.js (receipts added in T6) | Public team list and receipts | Return a prompt, secret, or roster |

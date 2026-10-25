@@ -5,7 +5,6 @@
 import { startAuthentication, startRegistration } from '/vendor/swa/index.js';
 
 const $ = (id) => document.getElementById(id);
-const ROLES = ['Captain', 'Builder', 'Designer', 'Presenter'];
 const TAG_RULE =
   'Attach a bright tag to this key. Write only the team name and "Return to the organizer desk" on the tag. Never write a credential ID or PIN on it.';
 const APPROVE_TEXT = 'I checked this team in person and approve their own key.';
@@ -123,7 +122,7 @@ function stateBadge(state) {
 
 function rosterList(team, editable) {
   const list = el('ul', undefined, 'roster');
-  if (!team.roster.length) list.append(el('li', 'No members yet.', 'muted'));
+  if (!team.roster.length) list.append(el('li', team.state === 'DRAFT' ? 'No members yet. After enrolling, members join on /team with the team\'s key.' : 'No members yet. Members join on /team with the team\'s key.', 'muted'));
   for (const m of team.roster) {
     const item = el('li');
     item.append(el('strong', m.handle), document.createTextNode(` ${m.displayName}, ${m.role}`));
@@ -143,34 +142,6 @@ function rosterList(team, editable) {
     list.append(item);
   }
   return list;
-}
-
-function addMemberForm(team) {
-  const form = el('form', undefined, 'inline-form');
-  const handle = textInput('', 39);
-  const display = textInput('', 40);
-  const role = document.createElement('select');
-  for (const r of ROLES) {
-    const o = el('option', r);
-    o.value = r;
-    role.append(o);
-  }
-  const add = el('button', 'Add', 'small-button');
-  add.type = 'submit';
-  form.append(field('GitHub handle', handle), field('Display name', display), field('Role', role), add);
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      await api(`/api/org/teams/${encodeURIComponent(team.id)}/roster`, {
-        body: { handle: handle.value.trim(), displayName: display.value, role: role.value },
-      });
-    } catch (_) {
-      return;
-    }
-    clearBanners();
-    load();
-  });
-  return form;
 }
 
 function keySourceBlock(team) {
@@ -322,7 +293,8 @@ function teamCard(team) {
   card.append(head);
 
   if (team.state === 'DRAFT') {
-    card.append(rosterList(team, true), addMemberForm(team), keySourceBlock(team));
+    if (team.roster.length) card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
+    card.append(keySourceBlock(team));
     const actions = el('div', undefined, 'team-actions');
     if (tappingTeamId === team.id) {
       actions.append(el('p', 'Tap the key now', 'tap-now'));
@@ -359,7 +331,7 @@ function teamCard(team) {
     }
     card.append(facts);
     if (team.state === 'ENROLLED' && lastData.prompts.length) card.append(assignForm(team));
-    card.append(rosterList(team, false), el('p', 'Roster locked', 'locked'));
+    card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
   }
   return card;
 }

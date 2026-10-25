@@ -1,14 +1,41 @@
-// public/js/team.js: pick a team and tap its key (SRS.md FR-09).
-// Shows team names only. Nothing about any prompt is on this page (L2).
+// public/js/team.js: pick a team, then tap its key (SRS.md FR-09). A new
+// member types their own GitHub handle and the same tap adds them to the
+// roster (FR-42). Team names only on this page: nothing about any prompt
+// or roster is shown before a tap (L2).
 import { startAuthentication } from '/vendor/swa/index.js';
 
-const list = document.getElementById('teams');
-const tapNow = document.getElementById('tap-now');
+const $ = (id) => document.getElementById(id);
+let team = null;
 let busy = false;
 
 function waiting(on) {
-  tapNow.hidden = !on;
-  for (const b of list.querySelectorAll('button')) b.disabled = on;
+  $('tap-now').hidden = !on;
+  for (const b of document.querySelectorAll('#who button')) b.disabled = on;
+}
+
+function showPick() {
+  team = null;
+  $('who').hidden = true;
+  $('pick').hidden = false;
+  clearBanners();
+}
+
+function showWho(t) {
+  team = t;
+  $('who-team').textContent = t.name;
+  $('join').hidden = true;
+  $('who-choice').hidden = false;
+  $('pick').hidden = true;
+  $('who').hidden = false;
+  clearBanners();
+}
+
+async function tap(join) {
+  if (busy) return;
+  busy = true;
+  const result = await teamTap(startAuthentication, team, waiting, join);
+  busy = false;
+  if (result) location.assign('/room');
 }
 
 async function load() {
@@ -18,6 +45,7 @@ async function load() {
   } catch (_) {
     return;
   }
+  const list = $('teams');
   list.replaceChildren();
   if (!data.teams.length) {
     const p = document.createElement('p');
@@ -26,20 +54,26 @@ async function load() {
     list.append(p);
     return;
   }
-  for (const team of data.teams) {
+  for (const t of data.teams) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'team-pick';
-    b.textContent = team.name;
-    b.addEventListener('click', async () => {
-      if (busy) return;
-      busy = true;
-      const result = await teamTap(startAuthentication, team, waiting);
-      busy = false;
-      if (result) location.assign('/room');
-    });
+    b.textContent = t.name;
+    b.addEventListener('click', () => showWho(t));
     list.append(b);
   }
 }
+
+$('existing').addEventListener('click', () => tap(null));
+$('new').addEventListener('click', () => {
+  $('who-choice').hidden = true;
+  $('join').hidden = false;
+  $('join-handle').focus();
+});
+$('join').addEventListener('submit', (e) => {
+  e.preventDefault();
+  tap({ handle: $('join-handle').value.trim(), displayName: $('join-name').value, role: $('join-role').value });
+});
+$('back').addEventListener('click', showPick);
 
 load();

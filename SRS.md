@@ -94,22 +94,19 @@ All failures return `{"ok": false, "code": "<CODE>", "error": "<sentence>"}` wit
 - Failure: 40 teams already exist: 409 `This event already has 40 teams, the most QuackTrack holds.`
 - Failure: delete of a non draft team: 409 `Team Mallard is enrolled and cannot be deleted.`
 
-### FR-04 Draft roster entry
-- Actor: Team Member at the organizer desk, through the organizer session.
-- Preconditions: organizer session, team in DRAFT, roster OPEN.
-- Happy path: the member enters GitHub handle, display name (1 to 40 characters), and role. The server adds the row and logs `roster.added`. Removing a row logs `roster.removed`.
-- Failure: handle does not match the GitHub handle rule (1 to 39 characters, letters, digits, single hyphens, no leading or trailing hyphen): 400 `That is not a valid GitHub handle.`
+### FR-04 Roster rules
+Changed in Session 3: the organizer no longer types rosters. Members join themselves (FR-42), and these rules apply to every join.
+- Rules: GitHub handle 1 to 39 characters, letters, digits, single hyphens, no leading or trailing hyphen; display name 1 to 40 characters; role one of Captain, Builder, Designer, Presenter; a handle is on at most one roster in the event (compared lowercase); at most 6 members, at most 1 in passkey mode; at most one Captain. The first member to join a team with no Captain becomes its Captain whatever role they picked.
+- Failure: handle does not match the GitHub handle rule: 400 `That is not a valid GitHub handle.`
 - Failure: handle on any roster in the event: 409 `octocat is already on Team Teal's roster.`
-- Failure: second Captain: 409 `Team Mallard already has a Captain.`
+- Failure: role Captain asked for while the team has a Captain: 409 `Team Mallard already has a Captain.`
 - Failure: seventh member, or second member in passkey mode: 409 `Team Mallard's roster is full.`
-- Failure: team not DRAFT: 409 `Team Mallard's roster is locked.` (After enrollment, FR-42 adds a member with the team's key tap.)
 - Failure: role is not one of the four: 400 `Pick a role: Captain, Builder, Designer, or Presenter.`
 
 ### FR-05 Enroll ceremony
 - Actor: Team Captain with the Organizer.
-- Preconditions: organizer session, team DRAFT, roster has 1 to 6 members and exactly one Captain, passkey mode has exactly 1 member, key source fields valid (FR-40).
+- Preconditions: organizer session, team DRAFT, key source fields valid (FR-40). Changed in Session 3: no roster is needed; members join after enrollment (FR-42).
 - Happy path: the organizer clicks "Enroll with key". The server computes the roster hash, builds a registration challenge bound to it, and lists every stored credential labeled `Security key` or `Organizer key` as excluded so the browser refuses a key that is already enrolled (SDS.md D6). The captain taps. The server verifies the registration, checks the credential ID is new, labels the credential (FR-06), computes the key fingerprint, sets the roster BOUND with its hash, sets the team ENROLLED, and logs `team.enrolled` with the roster hash, label, key source, tag color, tag label, and key fingerprint.
-- Failure: roster rule broken: 409 `Team Mallard needs exactly one Captain before enrolling.` or `Team Mallard needs at least one member before enrolling.`
 - Failure: browser reports the key is already registered (InvalidStateError): banner `This key is already enrolled to another team or the organizer. Use a different key.`
 - Failure: credential ID already stored for any team or the organizer (checked on the server for every credential type): 409 with the same sentence.
 - Failure: tap cancelled: banner `The key tap was cancelled. Nothing was enrolled.`
@@ -158,7 +155,7 @@ All failures return `{"ok": false, "code": "<CODE>", "error": "<sentence>"}` wit
 ### FR-11 Client reported tap failure
 - Actor: Team page or console page.
 - Preconditions: an open ceremony ID from an options call.
-- Happy path: when `startAuthentication` or `startRegistration` throws, the page sends the ceremony ID and the error name. The server deletes the pending ceremony and logs `tap.client_failed` with team ID, kind, error name, and `reportedBy: "client"`. The page shows the matching banner. On a team tap, NotAllowedError gives `That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed.`, because the browser reports a wrong key, a cancel, and a timeout with the same error name. On an enroll or override registration, InvalidStateError gives `This key is already enrolled to another team or the organizer. Use a different key.` and NotAllowedError gives that ceremony's cancel sentence (E34 or E75). On a sign tap, any error gives `The submission was not signed. Nothing was submitted.` On a roster add tap (FR-42), any error gives `The key tap was cancelled. Nothing was added.` On an organizer tap, any error gives `The key tap was cancelled. Nothing changed.`
+- Happy path: when `startAuthentication` or `startRegistration` throws, the page sends the ceremony ID and the error name. The server deletes the pending ceremony and logs `tap.client_failed` with team ID, kind, error name, and `reportedBy: "client"`. The page shows the matching banner. On a team tap, NotAllowedError gives `That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed.`, because the browser reports a wrong key, a cancel, and a timeout with the same error name. On an enroll or override registration, InvalidStateError gives `This key is already enrolled to another team or the organizer. Use a different key.` and NotAllowedError gives that ceremony's cancel sentence (E34 or E75). On a sign tap, any error gives `The submission was not signed. Nothing was submitted.` On an organizer tap, any error gives `The key tap was cancelled. Nothing changed.`
 - Failure: unknown or expired ceremony ID: 404 `That tap is no longer open.` The page still shows its banner.
 
 ### FR-12 Session expiry, logout, replacement
@@ -389,17 +386,14 @@ All failures return `{"ok": false, "code": "<CODE>", "error": "<sentence>"}` wit
 - Rejected alternative: a backup key enrolled at enrollment. Reason: it doubles the key pool cost per team, gives a team two live identities at once, and adds a second key to steal.
 - Test: INV-21 and INV-22.
 
-### FR-42 Add a member after enrollment (Session 3)
-- Actor: Organizer at the desk, with the Team Captain holding the team's key.
-- Preconditions: organizer session, team ENROLLED or REVEALED.
-- Happy path: on the enrolled team's row the organizer types GitHub handle, display name, and role, and clicks `Add with key`. The server applies the FR-04 rules (handle rule, handle on no roster in the event, at most one Captain, 1 to 6 members, passkey mode exactly 1), builds a challenge bound to the team and the new member (SDS.md 6.9), and allows only the team's ACTIVE credential. The captain taps. The server verifies the assertion against that credential, checks the counter, re-applies the FR-04 rules after the last await, adds the member, recomputes the team's roster hash, and logs `roster.joined` with team ID, handle, role, and credential ID. Example: octocat joins Team Mallard at 2pm; the organizer types `octocat`, Builder, clicks Add with key, and Mallard's captain taps key A.
+### FR-42 Join a team with its key (Session 3)
+- Actor: Team Member holding the team's key.
+- Preconditions: team ENROLLED or REVEALED. No session needed.
+- Happy path: on /team the member picks the team, chooses `I'm new to this team`, and types GitHub handle, display name, and role. The server applies the FR-04 rules, builds a challenge bound to the team and the new member (SDS.md 6.9), and allows only the team's ACTIVE credential. The member taps. The server verifies the assertion as in FR-09, re-applies the FR-04 rules after the last await, adds the member, recomputes the team's roster hash, logs `tap.ok` with purpose `join` and `roster.joined` with team ID, handle, role, and credential ID, mints the team session with this member selected at the keyboard, and runs FR-10 in the same response. The organizer types nothing. Example: Jason picks Team Mallard, types `jasonepage`, taps key A, and is Mallard's Captain; his teammate then types `quack-builder`, Builder, and taps.
 - Failure: FR-04 rule broken: the FR-04 sentence (E22 to E26).
-- Failure: team DRAFT: 409 `Team Mallard is not enrolled yet. Enroll at the organizer desk.` (draft rosters use FR-04).
+- Failure: team DRAFT: 409 `Team Mallard is not enrolled yet. Enroll at the organizer desk.`
 - Failure: team SUBMITTED: 409 `Team Mallard already submitted. New members cannot be added now.`
-- Failure: the browser refuses or the tap is cancelled: banner `The key tap was cancelled. Nothing was added.` (reported through FR-11).
-- Failure: assertion from a credential that is not this team's ACTIVE credential: 401 `That key is not Team Mallard's key. Nothing was added.` Logs `tap.failed` with purpose `roster`.
-- Failure: challenge used or expired: 410 `This tap expired. Click Add with key again.`
-- Failure: counter regression: 401 E45, logs `tap.counter_regression`.
+- Failure: wrong key, cancel, replay, expiry, counter regression: as FR-09 and FR-11 (E41 to E45). Nothing is added.
 - Test: INV-12.
 
 ### FR-43 Remove a member at any time (Session 3)
@@ -442,8 +436,8 @@ The only user facing failure sentences in QuackTrack. `{team}` is the stored tea
 | E25 | SECOND_CAPTAIN | 409 | `{team} already has a Captain.` | FR-04 |
 | E26 | ROSTER_FULL | 409 | `{team}'s roster is full.` | FR-04 |
 | E27 | ROSTER_LOCKED | 409 | `{team}'s roster is locked.` | FR-04 |
-| E28 | NEED_CAPTAIN | 409 | `{team} needs exactly one Captain before enrolling.` | FR-05 |
-| E29 | NEED_MEMBER | 409 | `{team} needs at least one member before enrolling.` | FR-05 |
+| E28 | (removed in Session 3) | | | enrollment no longer needs a roster |
+| E29 | (removed in Session 3) | | | enrollment no longer needs a roster |
 | E30 | TAG_MISSING | 400 | `Enter the tag color and the key's pool label before enrolling a pool key.` | FR-40 |
 | E31 | OWN_KEY_NOT_APPROVED | 400 | `Tick the box that says you checked this team in person before enrolling their own key.` | FR-40 |
 | E32 | KEY_TAKEN | 409 and banner | `This key is already enrolled to another team or the organizer. Use a different key.` | FR-05, FR-41 |
@@ -493,9 +487,6 @@ The only user facing failure sentences in QuackTrack. `{team}` is the stored tea
 | E76 | SECRET_BODY | 400 | `A secret needs a body.` | FR-18 (parked) |
 | E77 | SECRET_NOT_FOUND | 404 | `That secret does not exist for {team}.` | FR-19 (parked) |
 | E78 | ADD_AFTER_SUBMIT | 409 | `{team} already submitted. New members cannot be added now.` | FR-42 |
-| E79 | WRONG_KEY_ADD | 401 | `That key is not {team}'s key. Nothing was added.` | FR-42 |
-| E80 | ADD_CANCELLED | banner | `The key tap was cancelled. Nothing was added.` | FR-42, FR-11 |
-| E81 | ADD_EXPIRED | 410 | `This tap expired. Click Add with key again.` | FR-42 |
 
 Notices (yellow, not failures): N01 `No prompt is assigned to {team} yet.` (FR-10). N02 the refusal sentence (section 1). N03 `In-memory event: a restart wipes everything.` (FR-31). N04 `Shared laptop: click Leave room when you are done.` (FR-12). N05 `Your key was replaced by organizer override.` (FR-41). Terminal only: `RP_ID must match the host in ORIGIN. QuackTrack stopped.` (NFR-02).
 
@@ -558,7 +549,7 @@ Each human test needs two physical keys (A and B) and takes under 30 seconds onc
 - **INV-09 (L3)** One credential belongs to exactly one identity (one team or the organizer). Test: create draft Team Heron and enroll it with key A. Result: `This key is already enrolled to another team or the organizer. Use a different key.`
 - **INV-10 (L3)** A team has at most one submission and it never changes. Test: after Mallard signs, click Sign again. Result: `Team Mallard already submitted at <time>. Submissions cannot be changed.` No endpoint edits a submission.
 - **INV-11 (L3)** No submission exists without a verified assertion. Test: click Sign and cancel the key prompt. Result: banner, console row stays red, no receipt.
-- **INV-12 (L1)** After enrollment, a member is added only with a verified tap of that team's key (changed in Session 3; it was "a roster never changes"). Test: on enrolled Mallard's row type `octocat`, Builder, click Add with key, and tap key B. Result: the browser refuses, the banner says `The key tap was cancelled. Nothing was added.`, and the roster is unchanged. Tap key A: octocat appears and the log tail shows `roster.joined`.
+- **INV-12 (L1)** A person is added to a team's roster only with a verified tap of that team's key (changed in Session 3). Test: on /team pick Mallard, choose `I'm new to this team`, type `octocat`, Builder, and tap key B. Result: the E42 banner and the roster is unchanged. Tap key A: octocat is on Mallard's roster and the log tail shows `roster.joined`.
 - **INV-13 (L4)** Every challenge works once. Test: after a successful tap, in DevTools Network right click the verify request, Copy as fetch, paste into the console, run. Result: `This tap was already used. Tap your key again.`
 - **INV-14 (L4)** A signature is bound to the content hash. Test: in Mallard's room console run `QT_TEST.tamperSign('changed')` and tap key A. Result: `The submission changed after you started signing. Nothing was submitted.`
 - **INV-15 (L4)** Every receipt re-verifies. Test: open Mallard's receipt. Result: three green checks.
@@ -593,10 +584,10 @@ The `muted` flag may toggle in ENROLLED, REVEALED, or SUBMITTED (FR-23). Secret 
 | From | To | Trigger |
 |---|---|---|
 | (none) | OPEN | FR-03 create team |
-| OPEN | OPEN | FR-04 add or remove member |
+| OPEN | OPEN | FR-43 remove member |
 | OPEN | (deleted) | FR-03 delete team |
 | OPEN | BOUND | FR-05 enroll verify success, records roster hash |
-| BOUND | BOUND | FR-42 add with the team's key tap, or FR-43 remove; the roster hash is recomputed |
+| BOUND | BOUND | FR-42 join with the team's key tap, or FR-43 remove; the roster hash is recomputed |
 | any | (wiped) | FR-35 reset |
 
 ### Credential

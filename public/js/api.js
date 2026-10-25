@@ -115,12 +115,15 @@ function reportTapFailure(ceremonyId, err) {
 
 // The team tap ceremony (SDS.md 5.2), shared by /team and the room's
 // "Tap to reveal". startAuthentication is passed in from the page module.
+// join, when given, is { handle, displayName, role }: the same tap also
+// adds that member to the team (SDS.md 5.7).
 // Returns the verify response, or null after showing the right banner.
-async function teamTap(startAuthentication, team, onWaiting) {
+async function teamTap(startAuthentication, team, onWaiting, join) {
   clearBanners();
   let start;
   try {
-    start = await api('/api/tap/options', { body: { teamId: team.id, purpose: 'enter' } });
+    const body = join ? { teamId: team.id, purpose: 'join', ...join } : { teamId: team.id, purpose: 'enter' };
+    start = await api('/api/tap/options', { body });
   } catch (_) {
     return null;
   }

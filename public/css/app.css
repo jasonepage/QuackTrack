@@ -592,6 +592,7 @@ a:focus-visible {
   font-weight: 700;
 }
 .prompt-form input,
+.prompt-form select,
 .prompt-form textarea {
   padding: 0.5rem 0.625rem;
   border: 2px solid var(--ink);
@@ -629,6 +630,41 @@ a:focus-visible {
   color: var(--paper);
 }
 .team-pick:disabled { opacity: 0.5; cursor: wait; }
+
+/* ---------- Who are you? on /team (T12) ---------- */
+.who-choice {
+  display: grid;
+  gap: 1rem;
+  max-width: 46rem;
+}
+.action-button small,
+.choice-button small {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+.choice-button {
+  display: block;
+  width: 100%;
+  max-width: 46rem;
+  padding: 1.25rem 1.5rem;
+  border: 3px solid var(--ink);
+  border-radius: 0.75rem;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+.choice-button:hover:not(:disabled),
+.choice-button:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+}
+.roster-head { margin: 1rem 0 0; font-size: 1.25rem; }
 
 /* ---------- Team room (T5) ---------- */
 .room {

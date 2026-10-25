@@ -10,24 +10,25 @@ QuackTrack is Canvas for hackathons, without the forms. Today submissions run on
 
 | Actor | Can | Cannot |
 |---|---|---|
-| Organizer | Enroll the first organizer credential with the setup link printed on the server terminal. Log in to the console with a tap. Create prompt assignments. Create draft teams and type rosters with members. Add a member to an enrolled team with that team's key tap, and remove a member at any time (Session 3). Run the Enroll ceremony at the organizer desk, checking out a pool key or approving a team's own key. Replace a lost or broken key with the OVERRIDE ceremony, which needs the organizer's own tap. Assign and reassign prompts before reveal. Issue team secrets and notes (parked). Set the FAQ context bundle. Pin, delete, and mute in the commons. Read the log and verify the chain. Reset the event. Load demo data. | Reveal a prompt as a team. Sign or edit a submission. Add a member to an enrolled team without that team's key tap, or after the team submits. Replace a team's key without tapping the organizer credential. Reassign a prompt after reveal. Edit or delete log entries. |
+| Organizer | Enroll the first organizer credential with the setup link printed on the server terminal. Log in to the console with a tap. Create prompt assignments. Create draft teams (a name and a credential mode). Remove a roster member at any time (Session 3). Run the Enroll ceremony at the organizer desk, checking out a pool key or approving a team's own key. Replace a lost or broken key with the OVERRIDE ceremony, which needs the organizer's own tap. Assign and reassign prompts before reveal. Issue team secrets and notes (parked). Set the FAQ context bundle. Pin, delete, and mute in the commons. Read the log and verify the chain. Reset the event. Load demo data. | Reveal a prompt as a team. Sign or edit a submission. Put a person on a team's roster (members join themselves with the team's key, Session 3). Replace a team's key without tapping the organizer credential. Reassign a prompt after reveal. Edit or delete log entries. |
 | Team Captain | Bring the team key to the organizer desk. Tap to enroll. Tap to reveal the prompt (team secrets are parked). Tap to sign the submission. Everything a Team Member can do. | Enroll a second key. Submit twice. Edit a submission. See another team's room. |
-| Team Member | Register on the roster at enrollment (GitHub handle, display name, role). After the team has a session in a browser, select themselves as the person at the keyboard, read the room, download revealed instructions, chat in the team room, post in the commons, ask the FAQ assistant. Tap the key if they hold it. | Act at ceremony tier without the key. Post as a handle not on their roster. |
+| Team Member | Join the team's roster on /team by typing their GitHub handle, display name, and role and tapping the team's key (Session 3). After the team has a session in a browser, select themselves as the person at the keyboard, read the room, download revealed instructions, chat in the team room, post in the commons, ask the FAQ assistant. Tap the key if they hold it. | Act at ceremony tier without the key. Post as a handle not on their roster. |
 | Judge/Observer | Watch the projected organizer console, including roster handles. Open any receipt page by its link and see its roster handles, commit, and three verification checks. | Log in. See prompts, secrets, team rooms, team chat, or The Quad. |
 | Adversary | Anyone in the room with a second key, DevTools, a stolen cookie, a captured request, or a refresh button. | Reveal another team's prompt, sign for another team, replay a tap, change a signed submission, or edit the log without the chain breaking. |
 
 ## 3. Roster model
 
+Changed in Session 3 (October 25, 2026): members join themselves. The organizer never types handles.
+
 - A team is people bound to one credential.
-- The organizer creates a draft team (name and credential mode: "Security key" or "Solo passkey").
-- While the team is a draft and the key is at the desk, each member takes the keyboard and adds one row: GitHub handle, display name, role.
-- Roles: Captain, Builder, Designer, Presenter. Each roster has exactly one Captain.
-- A roster has 1 to 6 members. Solo passkey mode requires exactly 1 member.
+- The organizer creates a draft team (name and credential mode: "Security key" or "Solo passkey") and enrolls its key at the desk. Enrollment needs no roster.
+- Members join on /team: pick the team, choose "I'm new to this team", type GitHub handle, display name, and role, and tap the team's key. That one tap opens the room and adds them to the roster (FR-42). Example: the Team Mallard key goes around the table; Jason taps and types `jasonepage` and becomes Captain, then his teammate taps and types `quack-builder`, Builder.
+- Roles: Captain, Builder, Designer, Presenter. The first member to join is the Captain. Later members pick Builder, Designer, or Presenter. If the team has no Captain (for example the Captain was removed), the next member to join becomes Captain.
+- A roster has at most 6 members. Solo passkey mode has at most 1.
 - A GitHub handle can appear on only one roster in the event. Handles are compared lowercase.
-- The Enroll tap signs a challenge that includes the SHA-256 hash of the roster, so the roster is bound to the credential.
-- After enrollment (changed in Session 3, October 25, 2026): adding a member needs a tap of the team's own key at the organizer desk, so nobody can put a person on a team without that team's key. The organizer can remove a member at any time, with no tap. Both are logged. Once the team submits, members can no longer be added. The Sign tap covers the roster, so a receipt always shows the roster the team signed.
-- There is no GitHub login. The handle is a claim made at enrollment in front of the organizer. The console checks whether the submission repo owner matches a roster handle and shows the result. It never blocks.
-- Late joiners, members who leave, merges, dissolves, and renames follow the rules in section 11.
+- The organizer can remove a member at any time, with no tap (FR-43). Once the team submits, nobody can join. Joins and removals are logged. The Sign tap covers the roster, so a receipt always shows the roster the team signed.
+- There is no GitHub login. The handle is a claim the member makes with the team's key in hand. The console checks whether the submission repo owner matches a roster handle and shows the result. It never blocks.
+- Members who leave, merges, dissolves, and renames follow the rules in section 11.
 
 ## 4. Sessions and action tiers
 
@@ -57,11 +58,11 @@ Only the team's own session can open it. It shows:
 
 ### Enroll (at the organizer desk, organizer session required)
 1. Organizer clicks "New team", types a name, picks a credential mode. Fails if the name is taken: "A team named Team Mallard already exists. Pick another name."
-2. Each member types handle, display name, role and clicks Add. Fails on a bad handle: "That is not a valid GitHub handle." Fails on a duplicate: "octocat is already on Team Teal's roster." Fails on a second Captain: "Team Mallard already has a Captain."
-3. Organizer sets the key source on the row (section 11): Pool key with its tag color and pool label, or Team's own key with the approval box ticked. The row shows the tag rule: a bright tag with only the team name and "Return to the organizer desk", never a credential ID or PIN. Organizer clicks "Enroll with key". The server checks the roster (1 to 6 members, one Captain, solo mode has 1 member) and builds a challenge bound to the roster hash. Fails: "Team Mallard needs exactly one Captain before enrolling."
+2. Nobody types a roster at the desk (Session 3). Members join later on /team with the team's key (section 3).
+3. Organizer sets the key source on the row (section 11): Pool key with its tag color and pool label, or Team's own key with the approval box ticked. The row shows the tag rule: a bright tag with only the team name and "Return to the organizer desk", never a credential ID or PIN. Organizer clicks "Enroll with key". The server builds a challenge bound to the team and its (usually empty) roster hash.
 4. The browser asks for the key. The captain taps. If the key is already enrolled anywhere, the browser refuses and QuackTrack shows "This key is already enrolled to another team or the organizer. Use a different key." If the person cancels: "The key tap was cancelled. Nothing was enrolled."
-5. The server verifies, checks the credential is new, labels it, computes its key fingerprint, locks the roster, and logs `team.enrolled`. Fails if a "Security key" enrollment produced a synced or platform credential: "This looks like a passkey, not a physical security key. Use the key, or create the team as Solo passkey." Fails if the tap was too slow: "This tap expired. Click Enroll again."
-6. Console row shows ENROLLED, the credential label, the key source and tag, the fingerprint, and the enrolled roster.
+5. The server verifies, checks the credential is new, labels it, computes its key fingerprint, and logs `team.enrolled`. Fails if a "Security key" enrollment produced a synced or platform credential: "This looks like a passkey, not a physical security key. Use the key, or create the team as Solo passkey." Fails if the tap was too slow: "This tap expired. Click Enroll again."
+6. Console row shows ENROLLED, the credential label, the key source and tag, and the fingerprint. The roster fills in as members join.
 
 ### Reveal (team page: the host laptop in local mode, any device at the HTTPS origin in hosted mode)
 1. A member opens /team and picks the team name from the list of enrolled teams.
@@ -182,8 +183,8 @@ Key provisioning:
 - Lost or broken key: the OVERRIDE ceremony (SRS.md FR-41). The organizer taps the organizer credential, the captain taps a replacement key, and the word OVERRIDE shows on the console, room, The Quad, receipt, and log check. A backup key at enrollment is rejected: it doubles the pool cost and gives a team two live identities.
 
 Team lifecycle rules:
-- Roster after enrollment: adding a member needs the team's key tap (FR-42, INV-12); the organizer removes a member at any time (FR-43). After the team submits, members can be removed but not added.
-- Late joiner: added at the organizer desk with the team's key tap (FR-42), until the team submits. Example: octocat joins Team Mallard at 2pm; the organizer types the handle and role, clicks Add with key, and Mallard's captain taps key A.
+- Roster: members join themselves with the team's key tap on /team (FR-42, INV-12); the organizer removes a member at any time (FR-43). After the team submits, members can be removed but nobody can join.
+- Late joiner: joins like anyone else, with the team's key tap on /team, until the team submits. Example: octocat arrives at 2pm, borrows Mallard's key, picks Team Mallard on /team, chooses "I'm new to this team", types `octocat`, Builder, and taps.
 - Member leaves: the organizer may remove them (FR-43). A receipt always shows the roster the team signed, even if someone is removed later.
 - Merge: rejected. Two enrolled teams have two credentials and two prompts, and one team with two identities breaks L3. The teams pick one team to submit; the other stays Not submitted.
 - Dissolve: a team that quits stays on the console as Not submitted, then Missed deadline. Enrolled teams cannot be deleted (FR-03), so the console and log never lose a team.

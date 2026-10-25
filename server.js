@@ -9,12 +9,19 @@ const express = require('express');
 const config = require('./src/config');
 const { say, failWith, sendPlainPage, errorHandler, TERMINAL_RP_ID } = require('./src/errors');
 const { jsonBody } = require('./src/validate');
+const log = require('./src/log');
+const org = require('./src/routes/org');
 
 // NFR-02 boot check: stop before listening if WebAuthn would refuse every tap.
 if (!config.rpIdMatchesOrigin()) {
   console.error(TERMINAL_RP_ID);
   process.exit(1);
 }
+
+// L5: the action log starts with a genesis entry at boot (SDS.md section 8).
+const genesis = log.append({ kind: 'system', id: null }, 'event.created', {});
+// SDS.md 5.5 step 1: the one time organizer setup link, printed to the terminal only.
+const setupLink = org.bootSetup();
 
 const app = express();
 app.disable('x-powered-by');
@@ -69,7 +76,8 @@ app.use('/vendor/swa', express.static(swa.dir, { index: false }));
 // never puts data into them (CLAUDE.md rule 10). /console serves console.html.
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
-// Routes are mounted here by later tickets (T3 onward).
+// Routes. Later tickets mount theirs here.
+app.use('/api/org', org.router);
 
 // Unknown paths: a bare 404 with no body. SRS.md 4A has no sentence for an
 // unknown path, so none is invented.
@@ -83,5 +91,7 @@ app.listen(config.PORT, () => {
   if (!config.SESSION_SECRET_FROM_ENV) {
     console.log('SESSION_SECRET not set: sessions end when the server restarts.');
   }
+  console.log(`Action log genesis head: ${genesis.entryHash}`);
+  console.log(`Organizer setup: ${setupLink}`);
   console.log(`QuackTrack running at ${config.ORIGIN}`);
 });

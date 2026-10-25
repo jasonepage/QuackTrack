@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy: QuackTrack</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="wordmark" href="/">QuackTrack</a>
+  </header>
+
+  <main class="wrap doc">
+    <h1>Privacy Policy</h1>
+    <p class="lede">QuackTrack is software that an event organizer runs. This page says what it keeps about your team, and what it never keeps.</p>
+
+    <h2>What QuackTrack stores</h2>
+    <ul>
+      <li>Your team name.</li>
+      <li>Your roster: each member's GitHub handle, display name, and role.</li>
+      <li>Your team's key: its public key, its credential ID, a short fingerprint, its label, and its tag color and pool label.</li>
+      <li>Your prompt assignment, and the time your team revealed it.</li>
+      <li>Your submission: project name, repo link, commit, description, the build declaration, its hash, and the key's signature.</li>
+      <li>The action log: what happened and when, written with IDs, hashes, handles, and team names.</li>
+      <li>A session cookie that keeps your browser in your team room for up to 8 hours. It holds only a random ID.</li>
+      <li>Team chat and posts in The Quad, if your event uses them.</li>
+      <li>FAQ questions the assistant could not answer, so the organizer can answer them out loud.</li>
+    </ul>
+
+    <h2>What anyone with your receipt link can see</h2>
+    <p>Your team name, roster handles, project name, repo link, commit, description, and the signature checks. A receipt never shows your prompt.</p>
+
+    <h2>What QuackTrack never stores</h2>
+    <ul>
+      <li><strong>Prompt content in the log.</strong> The log keeps only IDs, hashes, and times.</li>
+      <li><strong>Biometric data.</strong> If you use Touch ID or Face ID, your device checks your fingerprint or face. QuackTrack never sees it.</li>
+      <li><strong>Private keys.</strong> Your key signs on the device, and the private key never leaves it.</li>
+      <li><strong>Passwords or email addresses.</strong> QuackTrack has no accounts.</li>
+    </ul>
+
+    <h2>Memory only</h2>
+    <p>Everything lives in the server's memory. Nothing goes into a database. When the server restarts, the whole event is wiped. The organizer can download the action log to check it, and that file holds only the log entries described above.</p>
+
+    <h2>The FAQ assistant</h2>
+    <p>If the organizer turns on the Gemini assistant, your question and the event information are sent to Google to get an answer. If the organizer uses Gemma, your question stays on the organizer's computer. If neither is on, your question does not leave the server.</p>
+
+    <h2>No selling of data</h2>
+    <p>QuackTrack does not sell your data. It has no ads, no analytics, and no tracking. In the hosted version, the hosting service may keep its own request logs.</p>
+
+    <h2>Who runs the server</h2>
+    <p>The organizer runs the server, so the organizer can reach what it holds. QuackTrack's screens never show your team chat to the organizer.</p>
+
+    <h2>Contact</h2>
+    <p>At the event, go to the organizer desk. For the hosted version or the software itself, open an issue on <a class="text-link" href="https://github.com/jasonepage/QuackTrack/issues">GitHub Issues</a>.</p>
+  </main>
+
+  <footer class="footer">
+    <nav class="wrap footer-links" aria-label="Footer">
+      <a href="/privacy" aria-current="page">Privacy Policy</a>
+      <a href="/support">Support</a>
+      <a href="https://github.com/jasonepage/QuackTrack">Open Source (MIT, GitHub repo)</a>
+      <a href="https://github.com/jasonepage/QuackTrack/blob/main/LICENSE">License</a>
+    </nav>
+  </footer>
+</body>
+</html>

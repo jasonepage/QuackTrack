@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Console: QuackTrack</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js"></script>
+  <script type="module" src="/js/console.js"></script>
+</head>
+<body>
+  <header class="topbar topbar-split">
+    <span class="wordmark">QuackTrack <span class="topbar-tag">Console</span></span>
+    <button id="logout" class="link-button" type="button" hidden>Log out</button>
+  </header>
+
+  <main class="wrap console">
+    <section id="login" class="doc" hidden>
+      <h1>Organizer console</h1>
+      <button id="login-button" class="action-button" type="button">Log in with key</button>
+    </section>
+
+    <section id="main" hidden>
+      <div id="chain" class="chain-strip" role="status"></div>
+      <p class="chain-head">Head <code id="chain-head"></code></p>
+
+      <div class="console-bar">
+        <h2>Action log</h2>
+        <a class="text-link" href="/api/org/log.json" download="quacktrack-log.json">Download log</a>
+      </div>
+      <p class="muted">The last 20 entries, newest first.</p>
+      <div class="table-scroll">
+        <table class="log-table">
+          <thead><tr><th>#</th><th>Time</th><th>Actor</th><th>Action</th><th>Details</th></tr></thead>
+          <tbody id="log-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

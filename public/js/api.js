@@ -8,6 +8,14 @@
 // reached or does not answer with the QuackTrack envelope.
 const QT_SERVER_SENTENCE = 'Something broke on the server. The organizer can check the terminal.';
 
+// Banner only rows from SRS.md section 4A, copied verbatim. A page shows
+// these when the browser itself cancels or refuses a tap, so there is no
+// server response to carry the sentence. Later tickets add their rows here.
+const QT_BANNER = Object.freeze({
+  ORG_TAP_CANCELLED: 'The key tap was cancelled. Nothing changed.', // E16
+  ENROLL_CANCELLED: 'The key tap was cancelled. Nothing was enrolled.', // E34
+});
+
 class ApiError extends Error {
   constructor(status, code, sentence) {
     super(sentence);

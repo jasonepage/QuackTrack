@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Organizer setup: QuackTrack</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js"></script>
+  <script type="module" src="/js/setup.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="wordmark">QuackTrack</span>
+  </header>
+
+  <main class="wrap doc">
+    <h1>Organizer setup</h1>
+    <p class="lede">Enroll the organizer credential once. After this, you log in on the console with a tap.</p>
+
+    <fieldset class="choice">
+      <legend>What will the organizer tap?</legend>
+      <label class="choice-row">
+        <input type="radio" name="mode" value="passkey" checked>
+        <span><strong>This laptop</strong><small>Touch ID or a passkey. Keeps both physical keys free for teams.</small></span>
+      </label>
+      <label class="choice-row">
+        <input type="radio" name="mode" value="key">
+        <span><strong>A security key</strong><small>A physical key that stays with the organizer.</small></span>
+      </label>
+    </fieldset>
+
+    <button id="enroll" class="action-button" type="button" disabled>Enroll organizer</button>
+    <p id="to-console" class="after-action" hidden><a class="text-link" href="/console">Go to the console</a></p>
+  </main>
+</body>
+</html>

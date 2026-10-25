@@ -56,12 +56,12 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/errors.js | `fail(res, status, code, sentence)`, the error envelope, and the SRS.md section 4A dictionary | Send a stack trace or a sentence that is not in the dictionary |
 | src/store.js | In-memory maps and `resetStore()` | Write to disk |
 | src/validate.js | Schema checks, unknown field rejection, handle and URL rules, rate limiter | Read the store |
-| src/canon.js (planned T2) | `norm`, `canon`, `sha256`, challenge and hash derivations | Use JSON.stringify on objects without key sorting |
-| src/log.js (planned T2) | Append and verify the hash chained action log | Store prompt text, secret text, or chat text |
-| scripts/verify-log.js (planned T2) | Verify an exported log file from the command line | Import anything from the running server |
-| src/sessions.js (planned T3) | Mint, read, expire, and revoke sessions, set cookies | Accept a session ID that fails the HMAC check |
-| src/webauthn.js (planned T3) | Wrap SimpleWebAuthn calls and the pending ceremony map | Reuse a challenge |
-| src/routes/org.js (planned T3) | Organizer setup, login, console, prompts, assign, reset, seed | Answer a request without an organizer session |
+| src/canon.js | `norm`, `canon`, `sha256`, challenge and hash derivations | Use JSON.stringify on objects without key sorting |
+| src/log.js | Append and verify the hash chained action log | Store prompt text, secret text, or chat text |
+| scripts/verify-log.js | Verify an exported log file from the command line | Import anything from the running server |
+| src/sessions.js | Mint, read, expire, and revoke sessions, set cookies | Accept a session ID that fails the HMAC check |
+| src/webauthn.js | Wrap SimpleWebAuthn calls and the pending ceremony map | Reuse a challenge |
+| src/routes/org.js | Organizer setup, login, console, prompts, assign, reset, seed | Answer a request without an organizer session |
 | src/routes/enroll.js (planned T4, override in T11) | Draft teams, roster edits, key source, enroll ceremony, override ceremony | Change a roster after enrollment, or finish an override without the organizer tap |
 | src/routes/tap.js (planned T5) | Team tap ceremony, reveal, client failure report | Mint a session without a verified assertion |
 | src/routes/team.js (planned T5) | Read tier team room, member select, download | Take a team ID from the request |
@@ -77,8 +77,10 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | public/index.html | Landing page with links | Contain event data |
 | public/css/app.css | All styles, including the fail banner | Set error text below 32px |
 | public/js/api.js | `api()` fetch wrapper and `showFail()` banner | Use innerHTML with server data |
-| public/setup.html, public/js/setup.js (planned T3) | Organizer first credential enrollment | Work without the setup token |
-| public/console.html, public/js/console.js (planned T3) | Organizer console | Cache data in localStorage |
+| public/privacy.html | Plain words privacy policy: what is stored, never stored, memory only, contact | Claim anything the code does not do |
+| public/support.html | Plain words help: organizer desk, lost or broken key, common problems, GitHub Issues | Link to the organizer console |
+| public/setup.html, public/js/setup.js | Organizer first credential enrollment | Work without the setup token |
+| public/console.html, public/js/console.js | Organizer console | Cache data in localStorage |
 | public/team.html, public/js/team.js (planned T5) | Team picker and tap in | Show anything about a prompt |
 | public/room.html, public/js/room.js (planned T5) | Team room | Render any field with innerHTML |
 | public/receipt.html, public/js/receipt.js (planned T6) | Public receipt and its verification checks | Show the prompt |

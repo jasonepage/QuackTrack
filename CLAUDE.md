@@ -75,6 +75,7 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/drama.js (planned T9) | Turn log entries and deadlines into public system posts | Read prompt or secret fields |
 | src/routes/secrets.js (parked: T10 cut by cut line 1) | Organizer notes, secret issue, secret reveal tap | Send a secret body before its reveal tap |
 | public/index.html | Landing page with links | Contain event data |
+| public/favicon.svg, public/favicon.ico, public/apple-touch-icon.png | The QuackTrack icon for browser tabs and phone home screens | Contain event data |
 | public/css/app.css | All styles, including the fail banner | Set error text below 32px |
 | public/js/api.js | `api()` fetch wrapper and `showFail()` banner | Use innerHTML with server data |
 | public/privacy.html | Plain words privacy policy: what is stored, never stored, memory only, contact | Claim anything the code does not do |

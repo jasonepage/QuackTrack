@@ -10,6 +10,62 @@ const TAG_RULE =
   'Attach a bright tag to this key. Write only the team name and "Return to the organizer desk" on the tag. Never write a credential ID or PIN on it.';
 const APPROVE_TEXT = 'I checked this team in person and approve their own key.';
 
+// One click presets for the pool key fields. Both fields stay free text
+// (FR-40: 1 to 20 characters). Red and green are left out on purpose:
+// on the console they mean Not submitted and Submitted.
+const TAG_COLORS = [
+  { name: 'yellow', swatch: '#ffd23f' },
+  { name: 'blue', swatch: '#1f5fd6' },
+  { name: 'orange', swatch: '#ff8c1a' },
+  { name: 'purple', swatch: '#7a3fc2' },
+  { name: 'pink', swatch: '#ff6fae' },
+  { name: 'white', swatch: '#ffffff' },
+];
+
+// The next free pool labels (Pool 01, Pool 02, ...), skipping labels an
+// enrolled team already holds this event.
+function freePoolLabels(count) {
+  const used = new Set(
+    (lastData ? lastData.teams : [])
+      .filter((t) => t.state !== 'DRAFT' && t.keySource === 'pool' && t.tagLabel)
+      .map((t) => t.tagLabel.toLowerCase())
+  );
+  const out = [];
+  for (let n = 1; n <= 40 && out.length < count; n++) {
+    const name = 'Pool ' + String(n).padStart(2, '0');
+    if (!used.has(name.toLowerCase())) out.push(name);
+  }
+  return out;
+}
+
+function markPressed(row, value) {
+  for (const b of row.querySelectorAll('button')) {
+    b.setAttribute('aria-pressed', String(b.dataset.value.toLowerCase() === String(value).trim().toLowerCase()));
+  }
+}
+
+function presetRow(values, current, onPick, swatchFor) {
+  const row = el('div', undefined, 'preset-row');
+  for (const v of values) {
+    const b = el('button', undefined, 'preset');
+    b.type = 'button';
+    b.dataset.value = v;
+    if (swatchFor) {
+      const dot = el('span', undefined, 'swatch');
+      dot.style.background = swatchFor(v);
+      b.append(dot);
+    }
+    b.append(document.createTextNode(v));
+    b.addEventListener('click', () => {
+      onPick(v);
+      markPressed(row, v);
+    });
+    row.append(b);
+  }
+  markPressed(row, current || '');
+  return row;
+}
+
 // Key source fields typed on a draft row, kept in memory only until Enroll
 // sends them, so a re-render does not wipe what the organizer typed.
 const keyDraft = new Map();
@@ -147,11 +203,27 @@ function keySourceBlock(team) {
   if (d.keySource === 'pool') {
     box.append(el('p', TAG_RULE, 'tag-rule'));
     const color = textInput(d.tagColor, 20);
-    color.addEventListener('input', () => (d.tagColor = color.value));
     const label = textInput(d.tagLabel, 20);
-    label.addEventListener('input', () => (d.tagLabel = label.value));
-    const row = el('div', undefined, 'inline-form');
-    row.append(field('Tag color', color), field('Pool label', label));
+    const colorPresets = presetRow(TAG_COLORS.map((c) => c.name), d.tagColor, (v) => {
+      d.tagColor = color.value = v;
+    }, (v) => TAG_COLORS.find((c) => c.name === v).swatch);
+    const labelPresets = presetRow(freePoolLabels(6), d.tagLabel, (v) => {
+      d.tagLabel = label.value = v;
+    });
+    color.addEventListener('input', () => {
+      d.tagColor = color.value;
+      markPressed(colorPresets, color.value);
+    });
+    label.addEventListener('input', () => {
+      d.tagLabel = label.value;
+      markPressed(labelPresets, label.value);
+    });
+    const row = el('div', undefined, 'preset-fields');
+    const colorCol = el('div');
+    colorCol.append(field('Tag color', color), colorPresets);
+    const labelCol = el('div');
+    labelCol.append(field('Pool label', label), labelPresets);
+    row.append(colorCol, labelCol);
     box.append(row);
   } else {
     const check = document.createElement('input');

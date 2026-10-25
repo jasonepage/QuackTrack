@@ -77,13 +77,16 @@ function assertChallenge(options, challengeBytes) {
 }
 
 // ---------- Registration (SDS.md 6.4) ----------
-// mode 'key': cross-platform, no resident key, no user verification.
+// mode 'key': cross-platform, no resident key, the key's PIN asked for.
 // mode 'passkey': no attachment set, so the browser offers this device's
 // passkey and "use a phone".
 async function registrationOptions({ ownerId, userName, mode, excludeCredentials = [] }, challengeBytes) {
   const authenticatorSelection =
     mode === 'key'
-      ? { authenticatorAttachment: 'cross-platform', residentKey: 'discouraged', userVerification: 'discouraged' }
+      ? // userVerification 'required': Firefox on macOS rejects a key's correct
+        // PIN when this is 'discouraged' (SDS.md D7). The server still does not
+        // require it: holding the key is the identity.
+        { authenticatorAttachment: 'cross-platform', residentKey: 'discouraged', userVerification: 'required' }
       : { residentKey: 'preferred', userVerification: 'preferred' };
   const options = await generateRegistrationOptions({
     rpName: 'QuackTrack',

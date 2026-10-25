@@ -82,6 +82,10 @@ const ROWS = [
   ['E75', 'OVERRIDE_CANCELLED', null, "The key tap was cancelled. The old key still belongs to {team}."],
   ['E76', 'SECRET_BODY', 400, "A secret needs a body."], // FR-18, parked
   ['E77', 'SECRET_NOT_FOUND', 404, "That secret does not exist for {team}."], // FR-19, parked
+  ['E78', 'ADD_AFTER_SUBMIT', 409, "{team} already submitted. New members cannot be added now."], // FR-42
+  ['E79', 'WRONG_KEY_ADD', 401, "That key is not {team}'s key. Nothing was added."], // FR-42
+  ['E80', 'ADD_CANCELLED', null, "The key tap was cancelled. Nothing was added."], // FR-42, FR-11 banner
+  ['E81', 'ADD_EXPIRED', 410, "This tap expired. Click Add with key again."], // FR-42
 ];
 
 // Notices (yellow, not failures) and the one terminal only line, from SRS.md section 4A.

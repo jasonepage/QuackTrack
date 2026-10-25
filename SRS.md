@@ -102,7 +102,7 @@ All failures return `{"ok": false, "code": "<CODE>", "error": "<sentence>"}` wit
 - Failure: handle on any roster in the event: 409 `octocat is already on Team Teal's roster.`
 - Failure: second Captain: 409 `Team Mallard already has a Captain.`
 - Failure: seventh member, or second member in passkey mode: 409 `Team Mallard's roster is full.`
-- Failure: team not DRAFT: 409 `Team Mallard's roster is locked.`
+- Failure: team not DRAFT: 409 `Team Mallard's roster is locked.` (After enrollment, FR-42 adds a member with the team's key tap.)
 - Failure: role is not one of the four: 400 `Pick a role: Captain, Builder, Designer, or Presenter.`
 
 ### FR-05 Enroll ceremony
@@ -158,7 +158,7 @@ All failures return `{"ok": false, "code": "<CODE>", "error": "<sentence>"}` wit
 ### FR-11 Client reported tap failure
 - Actor: Team page or console page.
 - Preconditions: an open ceremony ID from an options call.
-- Happy path: when `startAuthentication` or `startRegistration` throws, the page sends the ceremony ID and the error name. The server deletes the pending ceremony and logs `tap.client_failed` with team ID, kind, error name, and `reportedBy: "client"`. The page shows the matching banner. On a team tap, NotAllowedError gives `That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed.`, because the browser reports a wrong key, a cancel, and a timeout with the same error name. On an enroll or override registration, InvalidStateError gives `This key is already enrolled to another team or the organizer. Use a different key.` and NotAllowedError gives that ceremony's cancel sentence (E34 or E75). On a sign tap, any error gives `The submission was not signed. Nothing was submitted.` On an organizer tap, any error gives `The key tap was cancelled. Nothing changed.`
+- Happy path: when `startAuthentication` or `startRegistration` throws, the page sends the ceremony ID and the error name. The server deletes the pending ceremony and logs `tap.client_failed` with team ID, kind, error name, and `reportedBy: "client"`. The page shows the matching banner. On a team tap, NotAllowedError gives `That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed.`, because the browser reports a wrong key, a cancel, and a timeout with the same error name. On an enroll or override registration, InvalidStateError gives `This key is already enrolled to another team or the organizer. Use a different key.` and NotAllowedError gives that ceremony's cancel sentence (E34 or E75). On a sign tap, any error gives `The submission was not signed. Nothing was submitted.` On a roster add tap (FR-42), any error gives `The key tap was cancelled. Nothing was added.` On an organizer tap, any error gives `The key tap was cancelled. Nothing changed.`
 - Failure: unknown or expired ceremony ID: 404 `That tap is no longer open.` The page still shows its banner.
 
 ### FR-12 Session expiry, logout, replacement
@@ -272,7 +272,7 @@ All failures return `{"ok": false, "code": "<CODE>", "error": "<sentence>"}` wit
 ### FR-28 Sign options
 - Actor: Team Member holding the key.
 - Preconditions: team REVEALED, now before the assigned deadline. Cookie not used for identity.
-- Happy path: the member submits team ID, project name (1 to 80), repo URL (https, up to 200), commit SHA (the full 40 hex character ID from `git rev-parse HEAD`, stored lowercase), description (1 to 1000), and `declared: true` from the build declaration box, whose label is the build declaration sentence exactly. The server normalizes, builds the canonical string with the declaration sentence inside it, hashes it, adds a fresh nonce, derives the challenge, stores a PENDING submission ceremony, logs `sign.started` with team ID and content hash, and returns options, content hash, and short hash. Several pending sign ceremonies for one team may exist at once. Each expires on its own, so a stranger calling sign options for Mallard cannot cancel Mallard's real ceremony. QuackTrack does not check the commit against GitHub (Gemma mode makes no outbound calls); the receipt links to it so a judge can.
+- Happy path: the member submits team ID, project name (1 to 80), repo URL (https, up to 200), commit SHA (the full 40 hex character ID from `git rev-parse HEAD`, stored lowercase), description (1 to 1000), and `declared: true` from the build declaration box, whose label is the build declaration sentence exactly. The server normalizes, builds the canonical string with the declaration sentence and the team's current roster hash inside it (Session 3), hashes it, adds a fresh nonce, derives the challenge, stores a PENDING submission ceremony, logs `sign.started` with team ID and content hash, and returns options, content hash, and short hash. Several pending sign ceremonies for one team may exist at once. Each expires on its own, so a stranger calling sign options for Mallard cannot cancel Mallard's real ceremony. QuackTrack does not check the commit against GitHub (Gemma mode makes no outbound calls); the receipt links to it so a judge can.
 - Failure: SUBMITTED: 409 `Team Mallard already submitted. Submissions cannot be changed.`
 - Failure: not revealed: 409 `Reveal your prompt before you submit.`
 - Failure: past deadline: 409 `The deadline has passed. Submissions are closed for Team Mallard.`
@@ -292,14 +292,14 @@ All failures return `{"ok": false, "code": "<CODE>", "error": "<sentence>"}` wit
 ### FR-30 Receipt
 - Actor: anyone with the link.
 - Preconditions: submission SIGNED.
-- Happy path: /receipt/<id> shows team name, roster handles, credential label, project name, repo URL, commit SHA (with a `View commit` link built as `<repo URL>/commit/<sha>` for github.com repos), description, the build declaration sentence, canonical string, content hash, nonce, challenge, credential ID, public key, authenticator data, client data JSON, signature, counter, signed time, log sequence number, and entry hash. It shows three checks recomputed on each view: content hash matches, challenge matches the client data, signature valid. A "Download receipt JSON" button saves the same data. If the team's key was replaced before signing, the receipt shows `OVERRIDE: this team's key was replaced by the organizer before signing (log entry 41).` with the real entry number.
+- Happy path: /receipt/<id> shows team name, the roster handles the team signed (FR-28 puts the roster hash in the signed content, so a member removed later still shows), credential label, project name, repo URL, commit SHA (with a `View commit` link built as `<repo URL>/commit/<sha>` for github.com repos), description, the build declaration sentence, canonical string, content hash, nonce, challenge, credential ID, public key, authenticator data, client data JSON, signature, counter, signed time, log sequence number, and entry hash. It shows three checks recomputed on each view: content hash matches, challenge matches the client data, signature valid. A "Download receipt JSON" button saves the same data. If the team's key was replaced before signing, the receipt shows `OVERRIDE: this team's key was replaced by the organizer before signing (log entry 41).` with the real entry number.
 - Failure: unknown ID: 404 `There is no receipt with that ID.`
 - Failure: a check fails: that check shows red with `This check failed. The receipt does not match its signature.`
 
 ### FR-31 Organizer console
 - Actor: Organizer.
 - Preconditions: organizer session.
-- Happy path: one row per team showing name, state, roster handles and roles, credential label, key source and tag (`Pool 01 (yellow)`, `Team's own key`, or `Own passkey`), key fingerprint, an `OVERRIDE lost` or `OVERRIDE broken` tag after an override, assigned track, revealed (red "Not revealed" or green time), submitted (red "Not submitted", green time, or red "Missed deadline" once the team's deadline passes without a submission), short hash, commit (first 7 characters), repo owner check, muted flag. FR-39 sets what must read from across the room. The console also shows prompts, the last 20 log entries, chain status with head hash, the unanswered questions list, the commons with moderation buttons, the AI provider status, and the line `In-memory event: a restart wipes everything.` It polls every second.
+- Happy path: one row per team showing name, state, roster handles and roles, credential label, key source and tag (`Pool 01 (yellow)`, `Team's own key`, or `Own passkey`), key fingerprint, an `OVERRIDE lost` or `OVERRIDE broken` tag after an override, assigned track, revealed (red "Not revealed" or green time), submitted (red "Not submitted", green time, or red "Missed deadline" once the team's deadline passes without a submission), short hash, commit (first 7 characters), repo owner check, muted flag. FR-39 sets what must read from across the room. The console also shows prompts, the last 20 log entries written as plain sentences (for example `Team Mallard enrolled with Pool 01 (yellow).`), each with an expand control that shows the raw entry, chain status with the head hash shortened to its first and last 4 characters and an expand control for the full hash, the unanswered questions list, the commons with moderation buttons, the AI provider status, and the line `In-memory event: a restart wipes everything.` It polls every second.
 - Failure: no session: 401 `Organizer sign-in required.` with the "Log in with key" button.
 
 ### FR-32 Repo owner check
@@ -354,9 +354,9 @@ All failures return `{"ok": false, "code": "<CODE>", "error": "<sentence>"}` wit
 ### FR-39 Console at a glance
 - Actor: Organizer, Judge/Observer.
 - Preconditions: organizer session.
-- Happy path: the console's top strip shows, in at least 40px, `2 of 10 submitted` (submitted count of all teams) and the chain status (`Chain OK` in green or `Chain BROKEN at entry 7.` in red). Each team row starts with its state word (DRAFT, ENROLLED, REVEALED, SUBMITTED) in at least 28px capitals on a colored block: grey for DRAFT, green for SUBMITTED, red for the rest. An override adds a black on orange `OVERRIDE` tag to the row. The 3 second job: from across the room an organizer can tell how many teams have submitted, which teams have not, whether the chain is OK, and whether any key was overridden.
+- Happy path: the console's top strip shows, in at least 40px, `2 of 10 submitted` (submitted count of all teams), and beside it the chain status: a green `Log verified` badge (at least 24px) while the chain verifies, or `Chain BROKEN at entry 7.` in red at the full strip size when it does not (changed in Session 3: the chain is plumbing until it breaks). Each team row starts with its state word (DRAFT, ENROLLED, REVEALED, SUBMITTED) in at least 28px capitals on a colored block: grey for DRAFT, green for SUBMITTED, red for the rest. An override adds a black on orange `OVERRIDE` tag to the row. The 3 second job: from across the room an organizer can tell how many teams have submitted, which teams have not, whether the log is verified, and whether any key was overridden.
 - Failure: chain broken: the strip turns red with the sentence. Nothing else changes.
-- Test: after acceptance step 8, someone who has not seen the console stands 15 feet from the projection and says within 3 seconds how many teams submitted and whether the chain is OK.
+- Test: after acceptance step 8, someone who has not seen the console stands 15 feet from the projection and says within 3 seconds how many teams submitted and whether the log is verified.
 
 ### FR-40 Key source at enrollment
 - Actor: Organizer at the desk.
@@ -388,6 +388,26 @@ All failures return `{"ok": false, "code": "<CODE>", "error": "<sentence>"}` wit
 - Failure: key mode with a passkey: 422 as FR-06. Either challenge expired: 410 `This tap expired. Click Replace key again.`
 - Rejected alternative: a backup key enrolled at enrollment. Reason: it doubles the key pool cost per team, gives a team two live identities at once, and adds a second key to steal.
 - Test: INV-21 and INV-22.
+
+### FR-42 Add a member after enrollment (Session 3)
+- Actor: Organizer at the desk, with the Team Captain holding the team's key.
+- Preconditions: organizer session, team ENROLLED or REVEALED.
+- Happy path: on the enrolled team's row the organizer types GitHub handle, display name, and role, and clicks `Add with key`. The server applies the FR-04 rules (handle rule, handle on no roster in the event, at most one Captain, 1 to 6 members, passkey mode exactly 1), builds a challenge bound to the team and the new member (SDS.md 6.9), and allows only the team's ACTIVE credential. The captain taps. The server verifies the assertion against that credential, checks the counter, re-applies the FR-04 rules after the last await, adds the member, recomputes the team's roster hash, and logs `roster.joined` with team ID, handle, role, and credential ID. Example: octocat joins Team Mallard at 2pm; the organizer types `octocat`, Builder, clicks Add with key, and Mallard's captain taps key A.
+- Failure: FR-04 rule broken: the FR-04 sentence (E22 to E26).
+- Failure: team DRAFT: 409 `Team Mallard is not enrolled yet. Enroll at the organizer desk.` (draft rosters use FR-04).
+- Failure: team SUBMITTED: 409 `Team Mallard already submitted. New members cannot be added now.`
+- Failure: the browser refuses or the tap is cancelled: banner `The key tap was cancelled. Nothing was added.` (reported through FR-11).
+- Failure: assertion from a credential that is not this team's ACTIVE credential: 401 `That key is not Team Mallard's key. Nothing was added.` Logs `tap.failed` with purpose `roster`.
+- Failure: challenge used or expired: 410 `This tap expired. Click Add with key again.`
+- Failure: counter regression: 401 E45, logs `tap.counter_regression`.
+- Test: INV-12.
+
+### FR-43 Remove a member at any time (Session 3)
+- Actor: Organizer.
+- Preconditions: organizer session, team in any state.
+- Happy path: the organizer clicks `Remove` beside a member. No key tap: removing a person cannot let anyone act as the team. The server removes the member, recomputes the roster hash once the team is enrolled, and logs `roster.removed` with team ID and handle. A receipt signed earlier still shows the roster the team signed (FR-30).
+- Failure: handle not on this team's roster: 400 `octocat is not on Team Mallard's roster.`
+- Test: remove a member from enrolled Mallard: the row no longer lists them and the log tail shows `roster.removed`.
 
 ## 4A. Error dictionary
 
@@ -472,6 +492,10 @@ The only user facing failure sentences in QuackTrack. `{team}` is the stored tea
 | E75 | OVERRIDE_CANCELLED | banner | `The key tap was cancelled. The old key still belongs to {team}.` | FR-41 |
 | E76 | SECRET_BODY | 400 | `A secret needs a body.` | FR-18 (parked) |
 | E77 | SECRET_NOT_FOUND | 404 | `That secret does not exist for {team}.` | FR-19 (parked) |
+| E78 | ADD_AFTER_SUBMIT | 409 | `{team} already submitted. New members cannot be added now.` | FR-42 |
+| E79 | WRONG_KEY_ADD | 401 | `That key is not {team}'s key. Nothing was added.` | FR-42 |
+| E80 | ADD_CANCELLED | banner | `The key tap was cancelled. Nothing was added.` | FR-42, FR-11 |
+| E81 | ADD_EXPIRED | 410 | `This tap expired. Click Add with key again.` | FR-42 |
 
 Notices (yellow, not failures): N01 `No prompt is assigned to {team} yet.` (FR-10). N02 the refusal sentence (section 1). N03 `In-memory event: a restart wipes everything.` (FR-31). N04 `Shared laptop: click Leave room when you are done.` (FR-12). N05 `Your key was replaced by organizer override.` (FR-41). Terminal only: `RP_ID must match the host in ORIGIN. QuackTrack stopped.` (NFR-02).
 
@@ -534,7 +558,7 @@ Each human test needs two physical keys (A and B) and takes under 30 seconds onc
 - **INV-09 (L3)** One credential belongs to exactly one identity (one team or the organizer). Test: create draft Team Heron and enroll it with key A. Result: `This key is already enrolled to another team or the organizer. Use a different key.`
 - **INV-10 (L3)** A team has at most one submission and it never changes. Test: after Mallard signs, click Sign again. Result: `Team Mallard already submitted at <time>. Submissions cannot be changed.` No endpoint edits a submission.
 - **INV-11 (L3)** No submission exists without a verified assertion. Test: click Sign and cancel the key prompt. Result: banner, console row stays red, no receipt.
-- **INV-12 (L3)** A roster never changes after enrollment. Test: on the console try to add a member to enrolled Mallard. Result: `Team Mallard's roster is locked.`
+- **INV-12 (L1)** After enrollment, a member is added only with a verified tap of that team's key (changed in Session 3; it was "a roster never changes"). Test: on enrolled Mallard's row type `octocat`, Builder, click Add with key, and tap key B. Result: the browser refuses, the banner says `The key tap was cancelled. Nothing was added.`, and the roster is unchanged. Tap key A: octocat appears and the log tail shows `roster.joined`.
 - **INV-13 (L4)** Every challenge works once. Test: after a successful tap, in DevTools Network right click the verify request, Copy as fetch, paste into the console, run. Result: `This tap was already used. Tap your key again.`
 - **INV-14 (L4)** A signature is bound to the content hash. Test: in Mallard's room console run `QT_TEST.tamperSign('changed')` and tap key A. Result: `The submission changed after you started signing. Nothing was submitted.`
 - **INV-15 (L4)** Every receipt re-verifies. Test: open Mallard's receipt. Result: three green checks.
@@ -572,6 +596,7 @@ The `muted` flag may toggle in ENROLLED, REVEALED, or SUBMITTED (FR-23). Secret 
 | OPEN | OPEN | FR-04 add or remove member |
 | OPEN | (deleted) | FR-03 delete team |
 | OPEN | BOUND | FR-05 enroll verify success, records roster hash |
+| BOUND | BOUND | FR-42 add with the team's key tap, or FR-43 remove; the roster hash is recomputed |
 | any | (wiped) | FR-35 reset |
 
 ### Credential
@@ -605,12 +630,12 @@ A REVOKED credential stays stored so its ID stays unique and excluded. It never 
 
 Setup: server on the stage laptop at http://localhost:3000, organizer logged in, demo data loaded, console and /team in two windows of Chrome, keys A and B ready.
 
-1. Console shows Team Mallard and Team Teal as DRAFT with rosters. Pass if both rows say "Not enrolled" and chain status says `Chain OK`.
+1. Console shows Team Mallard and Team Teal as DRAFT with rosters. Pass if both rows say "Not enrolled" and the top strip shows `Log verified`.
 2. Enroll Mallard with key A. Pass if the row says ENROLLED and `Security key` within 2 seconds.
 3. Enroll Teal with key B. Pass if the row says ENROLLED and `Security key`.
 4. Assign "Duck Pond Sensors" to Mallard and "Quack Commons" to Teal. Pass if both rows show their track and red `Not revealed`.
 5. On /team pick Mallard and tap key B. Pass if the banner says `That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed.` and the console log tail shows `tap.client_failed`.
 6. Tap key A. Pass if the room shows the Duck Pond Sensors instructions and the Mallard row shows a green revealed time while Teal stays red.
 7. Fill project name, repo link, commit SHA, and description, tick the build declaration, and sign with key A. Pass if the locked panel showed the short hash before the tap and the room shows `Signed. Receipt <short hash>.` and a receipt link after it.
-8. Look at the console. Pass if Mallard is green `SUBMITTED` with the same short hash, Teal is red `Not submitted`, and chain status says `Chain OK`.
+8. Look at the console. Pass if Mallard is green `SUBMITTED` with the same short hash, Teal is red `Not submitted`, and the top strip shows `Log verified`.
 9. The whole sequence takes 60 seconds or less.

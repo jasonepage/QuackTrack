@@ -62,6 +62,20 @@
       <ul id="prompts" class="prompt-list"></ul>
 
       <div class="console-bar">
+        <h2>FAQ assistant</h2>
+        <span id="ai-status" class="ai-status"></span>
+      </div>
+      <h3>Questions it could not answer</h3>
+      <p class="muted">Newest first. Answer these out loud.</p>
+      <ul id="unanswered" class="unanswered"></ul>
+      <form id="bundle-form" class="bundle-form" autocomplete="off" novalidate>
+        <label>Event information (start each section with a line beginning "# ")
+          <textarea id="bundle-text" rows="12" maxlength="30000" spellcheck="false"></textarea>
+        </label>
+        <button class="small-button" type="submit">Save event information</button>
+      </form>
+
+      <div class="console-bar">
         <h2>Action log</h2>
         <a class="small-button" href="/api/org/log.json" download="quacktrack-log.json">Download log</a>
       </div>

@@ -50,7 +50,7 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | package-lock.json | Exact installed dependency versions, written by `npm install` | Be edited by hand |
 | .gitignore | Keep node_modules, .env, and logs out of git | Be removed |
 | LICENSE | MIT license text | Change license |
-| README.md | How to run local mode and hosted mode, env var table, demo steps, key pool sheet, testing notes | Contain a real key or secret |
+| README.md | How to run local mode and hosted mode, env var table, FAQ assistant setup, demo steps, key pool sheet, testing notes | Contain a real key or secret |
 | server.js | Create the Express app, guards, mount routes, serve the static receipt page at /receipt/:id, start listening | Hold business logic |
 | src/config.js | Read env vars and apply defaults | Read any env var not in the stack list |
 | src/errors.js | `fail(res, status, code, sentence)`, the error envelope, and the SRS.md section 4A dictionary | Send a stack trace or a sentence that is not in the dictionary |
@@ -61,16 +61,16 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | scripts/verify-log.js | Verify an exported log file from the command line | Import anything from the running server |
 | src/sessions.js | Mint, read, expire, and revoke sessions, set cookies | Accept a session ID that fails the HMAC check |
 | src/webauthn.js | Wrap SimpleWebAuthn calls and the pending ceremony map | Reuse a challenge |
-| src/routes/org.js | Organizer setup, login, console, prompts, assign, reset, seed | Answer a request without an organizer session |
+| src/routes/org.js | Organizer setup, login, console, prompts, assign, event information (bundle), reset, seed | Answer a request without an organizer session |
 | src/routes/enroll.js (override added in T11) | Draft teams (also used by the demo seed), key source, enroll ceremony, roster removal, console team rows with submission columns, override ceremony | Put a member on a roster (members join through tap.js), or finish an override without the organizer tap |
 | src/routes/tap.js | Team tap ceremony, join (T12), reveal, client failure report | Mint a session without a verified assertion |
-| src/routes/team.js | Read tier team room with its submission summary, member select, download | Take a team ID from the request |
+| src/routes/team.js | Read tier team room with its submission summary and FAQ mode, member select, download | Take a team ID from the request |
 | src/routes/sign.js | Sign ceremony, submission creation with the signed roster copy, repo owner check | Create a submission without a verified assertion |
 | src/routes/public.js | Public team list and receipts with their three checks | Return a prompt, secret, or roster, except the signed roster copy on a receipt |
-| src/ai/askFAQ.js (planned T8) | Pick provider, enforce grounding, refusal, unanswered log | Read the store beyond the context bundle |
-| src/ai/gemini.js (planned T8) | Call the Gemini API | Log or return the API key |
-| src/ai/gemma.js (planned T8) | Call Ollama | Call any host except OLLAMA_URL |
-| src/routes/faq.js (planned T8) | FAQ ask and bundle read endpoints | Change any state except the unanswered list and log |
+| src/ai/askFAQ.js | Pick provider, enforce grounding (JSON and verbatim quote checks), refusal, last call status | Read the store beyond the context bundle |
+| src/ai/gemini.js | Call the Gemini API | Log or return the API key |
+| src/ai/gemma.js | Call Ollama | Call any host except OLLAMA_URL |
+| src/routes/faq.js | FAQ ask (unanswered list) and bundle sections endpoints | Change any state except the unanswered list and log |
 | src/routes/commons.js (planned T9) | Team chat, public commons, moderation | Trust a team or handle sent by the client |
 | src/drama.js (planned T9) | Turn log entries and deadlines into public system posts | Read prompt or secret fields |
 | src/routes/secrets.js (parked: T10 cut by cut line 1) | Organizer notes, secret issue, secret reveal tap | Send a secret body before its reveal tap |
@@ -81,7 +81,7 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | public/privacy.html | Plain words privacy policy: what is stored, never stored, memory only, contact | Claim anything the code does not do |
 | public/support.html | Plain words help: organizer desk, lost or broken key, common problems, GitHub Issues | Link to the organizer console |
 | public/setup.html, public/js/setup.js | Organizer first credential enrollment | Work without the setup token |
-| public/console.html, public/js/console.js | Organizer console: one second polling, at a glance strip, team rows, log as plain sentences, Reset, Load demo data | Cache data in localStorage |
+| public/console.html, public/js/console.js | Organizer console: one second polling, at a glance strip, team rows, log as plain sentences, FAQ status, unanswered questions, event information form, Reset, Load demo data | Cache data in localStorage |
 | public/team.html, public/js/team.js | Team picker and tap in | Show anything about a prompt |
-| public/room.html, public/js/room.js | Team room, sign form, locked signing panel, receipt moment, `QT_TEST.tamperSign` | Render any field with innerHTML |
+| public/room.html, public/js/room.js | Team room, sign form, locked signing panel, receipt moment, `QT_TEST.tamperSign`, FAQ box and searchable event information | Render any field with innerHTML |
 | public/receipt.html, public/js/receipt.js | Public receipt and its verification checks | Show the prompt |

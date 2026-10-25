@@ -81,6 +81,8 @@ const ROWS = [
   ['E76', 'SECRET_BODY', 400, "A secret needs a body."], // FR-18, parked
   ['E77', 'SECRET_NOT_FOUND', 404, "That secret does not exist for {team}."], // FR-19, parked
   ['E78', 'ADD_AFTER_SUBMIT', 409, "{team} already submitted. New members cannot be added now."], // FR-42
+  // E79 to E81 were retired in Session 3.
+  ['E82', 'PICK_MEMBER_FAQ', 400, "Pick who is at the keyboard before you ask."], // FR-25 (added with T8)
 ];
 
 // Notices (yellow, not failures) and the one terminal only line, from SRS.md section 4A.

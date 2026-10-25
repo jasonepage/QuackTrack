@@ -16,6 +16,7 @@ const log = require('../log');
 const sessions = require('../sessions');
 const wa = require('../webauthn');
 const { teamRows, getTeam, createDraftTeam } = require('./enroll');
+const ai = require('../ai/askFAQ');
 
 const router = express.Router();
 const ORG_ACTOR = Object.freeze({ kind: 'organizer', id: 'organizer' });
@@ -225,12 +226,36 @@ router.get('/console', sessions.requireOrg, query({}), (req, res) => {
       submitted: teams.filter((t) => t.state === 'SUBMITTED').length,
     },
     notice: notice('N03'),
+    // FR-26: unanswered questions, newest first, for the organizer to answer out loud.
+    unanswered: store.unanswered
+      .slice()
+      .reverse()
+      .map((q) => ({ id: q.id, teamName: (store.teams.get(q.teamId) || {}).name || null, handle: q.handle, question: q.question, reason: q.reason, provider: q.provider, at: q.at })),
+    // FR-27: provider and status from the last call.
+    ai: ai.status(),
+    // FR-24: the saved event information, so the form shows what teams see.
+    bundle: { text: store.event.bundle, hash: store.event.bundleHash },
     prompts: [...store.prompts.values()]
       .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
       .map((p) => ({ id: p.id, track: p.track, deadline: p.deadline })),
     log: store.log.slice(-20),
     chain: { ok: chain.ok, head: chain.head, brokenAt: chain.brokenAt, count: chain.count },
   });
+});
+
+// ---------- FR-24 Context bundle ----------
+// The event information the FAQ assistant may quote. Sections start with a
+// line beginning "# ". Logged by hash only.
+const BUNDLE_MAX = 30000;
+router.post('/bundle', sessions.requireOrg, body({ text: { type: 'string', label: 'Event information' } }), (req, res) => {
+  const text = canon.norm(req.body.text);
+  if ([...text].length > BUNDLE_MAX) return failWith(res, 'BUNDLE_TOO_LONG');
+  if (!text) return failWith(res, 'BAD_LENGTH', { label: 'Event information', min: 1, max: BUNDLE_MAX });
+  const bundleHash = canon.sha256hex(canon.utf8(text));
+  log.append(ORG_ACTOR, 'bundle.updated', { bundleHash });
+  store.event.bundle = text;
+  store.event.bundleHash = bundleHash;
+  res.json({ ok: true, bundleHash });
 });
 
 // ---------- FR-35 Reset event ----------

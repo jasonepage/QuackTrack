@@ -49,6 +49,20 @@
         <h2>Roster</h2>
         <ul id="roster" class="roster"></ul>
       </section>
+
+      <section id="faq" class="room-section faq">
+        <h2>Ask about the event</h2>
+        <form id="faq-form" class="faq-form" autocomplete="off" novalidate>
+          <label>Your question <input id="faq-question" maxlength="300" placeholder="When does judging start?"></label>
+          <button id="faq-ask" class="small-button primary" type="submit">Ask</button>
+        </form>
+        <div id="faq-answer" aria-live="polite"></div>
+        <div id="faq-list" hidden>
+          <label class="faq-search">Search the event information <input id="faq-search" type="search" spellcheck="false"></label>
+          <p id="faq-empty" class="muted"></p>
+          <div id="faq-sections"></div>
+        </div>
+      </section>
     </div>
   </main>
 </body>

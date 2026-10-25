@@ -395,6 +395,7 @@ function render(data) {
   $('memory-notice').textContent = data.notice;
 
   renderPrompts(data);
+  renderFaq(data);
 
   const teams = $('teams');
   teams.replaceChildren(...(data.teams.length ? data.teams.map(teamCard) : [el('p', 'No teams yet.', 'muted')]));
@@ -417,6 +418,49 @@ function render(data) {
     body.append(row);
   }
 }
+
+// ---------- FAQ assistant (FR-24, FR-26, FR-27) ----------
+const AI_NAMES = { gemini: 'Gemini', gemma: 'Gemma (Ollama)', none: 'None' };
+const REASONS = {
+  not_in_bundle: 'not in the event information',
+  invalid_model_output: 'the model gave an unusable reply',
+  quote_not_in_bundle: 'the model quote was not in the event information',
+  provider_unavailable: 'no AI available',
+};
+let bundleShownHash; // the saved bundle the textarea was filled from
+
+function renderFaq(data) {
+  const s = data.ai;
+  $('ai-status').textContent = `AI: ${AI_NAMES[s.provider]}, ${s.status || 'not used yet'}`;
+  const list = $('unanswered');
+  list.replaceChildren();
+  if (!data.unanswered.length) list.append(el('li', 'None yet.', 'muted'));
+  for (const q of data.unanswered) {
+    const li = el('li');
+    li.append(el('span', q.question, 'q'));
+    li.append(document.createTextNode(`${q.teamName || 'A team'}, ${q.handle || 'unknown'}, ${new Date(q.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. Why: ${REASONS[q.reason] || q.reason}. Provider: ${AI_NAMES[q.provider] || q.provider}.`));
+    list.append(li);
+  }
+  // Fill the textarea from the server only when the saved text changed and
+  // the organizer is not typing in it.
+  const box = $('bundle-text');
+  if (data.bundle.hash !== bundleShownHash && document.activeElement !== box) {
+    bundleShownHash = data.bundle.hash;
+    box.value = data.bundle.text || '';
+  }
+}
+
+$('bundle-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/org/bundle', { body: { text: $('bundle-text').value } });
+  } catch (_) {
+    return;
+  }
+  bundleShownHash = undefined;
+  clearBanners();
+  load();
+});
 
 // ---------- D16: log entries as plain sentences ----------
 const openEntries = new Set(); // raw entries the organizer opened, kept across polls
@@ -464,6 +508,8 @@ function logSentence(entry, names, tracks) {
       return `${d.teamId ? team + "'s key" : "The organizer's key"} counter went backwards, which can mean a cloned key.`;
     case 'instructions.downloaded': return `${d.handle || 'Someone'} on ${team} downloaded the instructions.`;
     case 'bundle.updated': return 'The event information was updated.';
+    case 'faq.answered': return `The FAQ assistant answered ${d.handle || 'someone'} on ${team} (${AI_NAMES[d.provider] || d.provider}).`;
+    case 'faq.unanswered': return `The FAQ assistant could not answer ${d.handle || 'someone'} on ${team}: ${REASONS[d.reason] || d.reason}.`;
     case 'sign.started': return `${team} started signing hash ${short}.`;
     case 'sign.failed': return `${team}'s signing tap failed: ${TAP_REASON[d.reason] || d.reason}.`;
     case 'submission.signed': return `${team} signed its submission. Hash ${short}.`;

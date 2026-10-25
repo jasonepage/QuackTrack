@@ -1,4 +1,5 @@
 // public/js/room.js: the team room (SRS.md FR-13, FR-14, FR-15, FR-38),
+// the FAQ box and searchable event information list (FR-25 to FR-27),
 // and the Sign form, locked signing panel, and receipt moment (FR-28,
 // FR-29, FR-38). The team comes from this browser's session only. Every
 // server string is rendered with textContent, never innerHTML. Polls every
@@ -69,6 +70,7 @@ function render() {
 
   renderPrompt();
   renderSubmit();
+  renderFaq();
 
   const members = $('members');
   members.replaceChildren();
@@ -164,6 +166,81 @@ async function download() {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
+
+// ---------- FAQ assistant (FR-25 to FR-27) ----------
+// The answer and the list live outside render(), so a poll never wipes them.
+let sections = null; // [{heading, body}] once loaded
+let sectionsFor = null; // the hasBundle value the list was loaded for
+const STOP = new Set(['what', 'when', 'where', 'which', 'does', 'have', 'with', 'this', 'that', 'from', 'your', 'there', 'about', 'will', 'should', 'the', 'and', 'for', 'are', 'can', 'how', 'who', 'our']);
+
+function words(q) {
+  return String(q).toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !STOP.has(w));
+}
+
+function renderSections(queryText) {
+  const box = $('faq-sections');
+  box.replaceChildren();
+  if (!sections) return;
+  const want = words(queryText);
+  const shown = sections.filter((s) => !want.length || want.some((w) => (s.heading + '\n' + s.body).toLowerCase().includes(w)));
+  $('faq-empty').textContent = shown.length ? '' : 'No section matches. Try other words.';
+  for (const s of shown) {
+    const item = el('article', undefined, 'faq-section');
+    if (s.heading) item.append(el('h3', s.heading));
+    item.append(el('p', s.body, 'faq-body'));
+    box.append(item);
+  }
+}
+
+// FR-27: load the sections for the list. With no bundle the box shows the
+// server's sentence (E56) instead of a banner.
+async function showList(queryText) {
+  $('faq-list').hidden = false;
+  if (!sections || sectionsFor !== room.hasBundle) {
+    sectionsFor = room.hasBundle;
+    try {
+      sections = (await api('/api/team/bundle', { silent: true })).sections;
+    } catch (err) {
+      sections = null;
+      $('faq-sections').replaceChildren();
+      $('faq-empty').textContent = err.message;
+      return;
+    }
+  }
+  if (queryText !== undefined) $('faq-search').value = queryText;
+  renderSections($('faq-search').value);
+}
+
+function renderFaq() {
+  if (room.faqMode === 'list' || !$('faq-list').hidden) showList();
+}
+
+$('faq-search').addEventListener('input', () => renderSections($('faq-search').value));
+
+$('faq-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const question = $('faq-question').value;
+  const ask = $('faq-ask');
+  ask.disabled = true;
+  clearBanners();
+  const out = $('faq-answer');
+  let data;
+  try {
+    data = await api('/api/team/faq', { body: { question } });
+  } catch (_) {
+    return; // the banner shows the server's sentence
+  } finally {
+    ask.disabled = false;
+  }
+  out.replaceChildren();
+  if (data.answered) {
+    if (room.faqMode === 'ai') $('faq-list').hidden = true; // fallback was for one question only
+    out.append(el('p', data.answer, 'faq-answer-text'), el('p', 'From the event information:', 'step-num'), el('blockquote', data.quote, 'faq-quote'));
+  } else {
+    out.append(el('p', data.refusal, 'notice-box')); // N02, the refusal sentence
+    if (data.mode === 'list') showList(question); // FR-27: filter by the question's words
+  }
+});
 
 // ---------- Sign (FR-28, FR-29, FR-38) ----------
 function formValues() {

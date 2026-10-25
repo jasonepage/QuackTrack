@@ -68,6 +68,20 @@ Organizer setup: http://localhost:3000/setup?token=<token>
 
 Open it on the host laptop and enroll the organizer credential, usually a passkey with Touch ID, so both physical keys stay free for teams. The link works once. After that, the organizer logs in on the console with a tap. Anyone who can read the server terminal can read the link, so keep the terminal on the host laptop. A restart wipes the event and prints a new link.
 
+## FAQ assistant
+
+Teams ask questions about the event in their room. The assistant may only answer by quoting the event information the organizer saved on the console (Load demo data saves a sample). If the answer is not in it, the team sees "I can't find that in the event information, so I've sent your question to the organizers." and the question shows on the console under "Questions it could not answer".
+
+- **No AI (default):** with no settings, the room shows the event information as a searchable list instead.
+- **Gemini:** paste your own key into the one command, never into a file:
+  ```
+  AI_PROVIDER=gemini GEMINI_API_KEY=paste-key-here npm start
+  ```
+  The model is the constant `GEMINI_MODEL` in src/ai/gemini.js (`gemini-3.8-flash`). If the console shows "AI: Gemini, unavailable" and the terminal shows a model error, change that one line to `gemini-3.5-flash-lite`.
+- **Gemma on this laptop:** install Ollama, run `ollama pull gemma4:e2b`, then `AI_PROVIDER=gemma npm start`. Nothing leaves the laptop.
+
+If a call fails or takes over 15 seconds, that one question falls back to the list and the next question tries the AI again. The console shows the AI status from the last call.
+
 ## The 60 second demo
 
 Before the clock starts:

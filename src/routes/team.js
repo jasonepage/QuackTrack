@@ -12,6 +12,7 @@ const { body, query } = require('../validate');
 const log = require('../log');
 const sessions = require('../sessions');
 const { keySourceText } = require('./enroll');
+const ai = require('../ai/askFAQ');
 
 const router = express.Router();
 
@@ -55,6 +56,9 @@ function roomView(team, session) {
     prompt: promptState === 'revealed' ? { track: prompt.track, instructions: prompt.instructions, deadline: prompt.deadline } : null,
     revealedAt: team.revealedAt,
     submission: submissionSummary(team),
+    // FR-13 and FR-27: 'ai' when a provider is configured, else 'list'.
+    faqMode: ai.providerName() === 'none' ? 'list' : 'ai',
+    hasBundle: Boolean(store.event.bundle),
     notices,
   };
 }

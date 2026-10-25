@@ -252,6 +252,7 @@ Changed in Session 3: the organizer no longer types rosters. Members join themse
 - Preconditions: valid team session with a selected member, a bundle exists.
 - Happy path: the member asks a question (1 to 300 characters). `askFAQ({question, bundle})` in src/ai/askFAQ.js is the only AI entry point. It picks the provider from AI_PROVIDER (`gemini` or `gemma`), calls that provider's one function `complete(systemText, question)`, which returns raw text or throws, and returns `{answered, answer, quote, reason, provider}`. Gemini (BYOK) and Gemma (BYOM) are two settings of this one function, not two features. The provider must return JSON with `found`, `answer`, `quote`. The server accepts the answer only if `found` is true and `quote` appears in the bundle (whitespace collapsed, case ignored). The room shows the answer and the quote. Logs `faq.answered` with provider.
 - Failure: no bundle: 409 `The organizer has not added event information yet.`
+- Failure: no member selected: 400 `Pick who is at the keyboard before you ask.` (E82, added with T8: the precondition had no sentence)
 - Failure: rate limit (more than 1 per 5 seconds per session): 429 `One question at a time. Wait a few seconds.`
 
 ### FR-26 FAQ refusal and unanswered log
@@ -487,6 +488,8 @@ The only user facing failure sentences in QuackTrack. `{team}` is the stored tea
 | E76 | SECRET_BODY | 400 | `A secret needs a body.` | FR-18 (parked) |
 | E77 | SECRET_NOT_FOUND | 404 | `That secret does not exist for {team}.` | FR-19 (parked) |
 | E78 | ADD_AFTER_SUBMIT | 409 | `{team} already submitted. New members cannot be added now.` | FR-42 |
+| E79 to E81 | (retired in Session 3) | | | |
+| E82 | PICK_MEMBER_FAQ | 400 | `Pick who is at the keyboard before you ask.` | FR-25 (added with T8) |
 
 Notices (yellow, not failures): N01 `No prompt is assigned to {team} yet.` (FR-10). N02 the refusal sentence (section 1). N03 `In-memory event: a restart wipes everything.` (FR-31). N04 `Shared laptop: click Leave room when you are done.` (FR-12). N05 `Your key was replaced by organizer override.` (FR-41). Terminal only: `RP_ID must match the host in ORIGIN. QuackTrack stopped.` (NFR-02).
 

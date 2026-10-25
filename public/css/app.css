@@ -892,6 +892,63 @@ a.small-button { display: inline-block; text-decoration: none; }
 }
 .facts.receipt-facts { grid-template-columns: minmax(8rem, max-content) 1fr; }
 
+/* ---------- FAQ assistant (T8) ---------- */
+.faq-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  max-width: 46rem;
+}
+.faq-form label,
+.faq-search {
+  display: flex;
+  flex: 1 1 20rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.faq-form input,
+.faq-search input,
+.bundle-form textarea {
+  padding: 0.6rem 0.75rem;
+  border: 2px solid var(--ink);
+  border-radius: 0.375rem;
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 400;
+}
+#faq-answer { margin-top: 1rem; max-width: 46rem; }
+.faq-answer-text { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem; }
+.faq-quote {
+  margin: 0.25rem 0 0;
+  padding: 0.5rem 1rem;
+  border-left: 6px solid var(--ink);
+  background: var(--soft);
+  white-space: pre-wrap;
+}
+#faq-list { margin-top: 1rem; max-width: 46rem; }
+.faq-search { margin-bottom: 0.75rem; }
+.faq-section {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--line);
+  border-radius: 0.5rem;
+}
+.faq-section h3 { margin: 0 0 0.25rem; font-size: 1.25rem; }
+.faq-body { margin: 0; white-space: pre-wrap; }
+
+/* Console: event information, unanswered questions, AI status (T8). */
+.bundle-form { display: grid; gap: 0.75rem; max-width: 60rem; margin: 0.75rem 0; }
+.bundle-form label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 1rem; font-weight: 700; }
+.bundle-form textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1rem; }
+.bundle-form .small-button { justify-self: start; }
+.ai-status { font-weight: 700; }
+.unanswered { padding-left: 1.25rem; }
+.unanswered li { margin-bottom: 0.6rem; }
+.unanswered .q { display: block; font-size: 1.25rem; font-weight: 700; }
+
 /* ---------- Footer ---------- */
 .footer {
   margin-top: 3.5rem;

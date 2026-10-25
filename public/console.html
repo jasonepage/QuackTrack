@@ -40,6 +40,17 @@
       <div id="teams" class="team-list"></div>
 
       <div class="console-bar">
+        <h2>Prompts</h2>
+      </div>
+      <form id="new-prompt" class="prompt-form" autocomplete="off">
+        <label>Track <input id="prompt-track" maxlength="60" required></label>
+        <label>Instructions <textarea id="prompt-instructions" maxlength="4000" rows="4" required></textarea></label>
+        <label>Deadline <input id="prompt-deadline" type="datetime-local" required></label>
+        <button class="small-button" type="submit">Create prompt</button>
+      </form>
+      <ul id="prompts" class="prompt-list"></ul>
+
+      <div class="console-bar">
         <h2>Action log</h2>
         <a class="text-link" href="/api/org/log.json" download="quacktrack-log.json">Download log</a>
       </div>

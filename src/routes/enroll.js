@@ -46,6 +46,7 @@ function keySourceText(team) {
 // One console row (FR-31, T4 columns). Organizer session only.
 function teamRow(team) {
   const cred = team.credentialId ? store.credentials.get(team.credentialId) : null;
+  const prompt = team.assignedPromptId ? store.prompts.get(team.assignedPromptId) : null;
   return {
     id: team.id,
     name: team.name,
@@ -60,6 +61,10 @@ function teamRow(team) {
     keySourceText: team.state === 'DRAFT' ? null : keySourceText(team),
     fingerprint: cred ? wa.formatFingerprint(cred.fingerprint) : null,
     enrolledAt: team.enrolledAt,
+    assignedPromptId: team.assignedPromptId,
+    assignedTrack: prompt ? prompt.track : null,
+    deadline: prompt ? prompt.deadline : null,
+    revealedAt: team.revealedAt,
   };
 }
 
@@ -295,4 +300,4 @@ router.post(
   }
 );
 
-module.exports = { router, teamRow, teamRows, getTeam, ROLES };
+module.exports = { router, teamRow, teamRows, getTeam, keySourceText, ROLES };

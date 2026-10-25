@@ -51,7 +51,8 @@ button.addEventListener('click', async () => {
   let attestation;
   try {
     attestation = await startRegistration({ optionsJSON: p.options });
-  } catch (_) {
+  } catch (err) {
+    reportTapFailure(p.ceremonyId, err);
     showFail(QT_BANNER.ENROLL_CANCELLED);
     button.disabled = false;
     return;

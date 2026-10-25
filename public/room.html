@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team room: QuackTrack</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js"></script>
+  <script type="module" src="/js/room.js"></script>
+</head>
+<body>
+  <header class="topbar topbar-split">
+    <span class="wordmark">QuackTrack</span>
+    <button id="leave" class="small-button" type="button" hidden>Leave room</button>
+  </header>
+
+  <main class="wrap room">
+    <p id="no-session" class="after-action" hidden><a class="text-link" href="/team">Go to Team tap in</a></p>
+
+    <div id="room" hidden>
+      <div id="notices"></div>
+      <h1 id="team-name"></h1>
+      <dl id="team-facts" class="facts"></dl>
+
+      <section id="prompt" class="prompt-card" aria-live="polite"></section>
+
+      <section class="room-section">
+        <h2>Who is at the keyboard?</h2>
+        <div id="members" class="member-picker"></div>
+      </section>
+
+      <section class="room-section">
+        <h2>Roster</h2>
+        <ul id="roster" class="roster"></ul>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

@@ -261,6 +261,7 @@ async function enroll(team) {
   } catch (err) {
     tappingTeamId = null;
     render(lastData);
+    reportTapFailure(start.ceremonyId, err);
     // SRS.md FR-05 and FR-11: an already enrolled key, or a cancel.
     showFail(err && err.name === 'InvalidStateError' ? QT_BANNER.KEY_TAKEN : QT_BANNER.ENROLL_CANCELLED);
     return;
@@ -274,6 +275,43 @@ async function enroll(team) {
     tappingTeamId = null;
   }
   load();
+}
+
+// FR-08: assign or reassign a prompt until the team reveals it.
+function assignForm(team) {
+  const form = el('form', undefined, 'inline-form');
+  const select = document.createElement('select');
+  for (const p of lastData.prompts) {
+    const o = el('option', p.track);
+    o.value = p.id;
+    o.selected = p.id === team.assignedPromptId;
+    select.append(o);
+  }
+  const go = el('button', team.assignedPromptId ? 'Reassign' : 'Assign', 'small-button');
+  go.type = 'submit';
+  form.append(field('Prompt', select), go);
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/api/org/assign', { body: { teamId: team.id, promptId: select.value } });
+    } catch (_) {
+      return;
+    }
+    clearBanners();
+    load();
+  });
+  return form;
+}
+
+function renderPrompts(data) {
+  const list = $('prompts');
+  list.replaceChildren();
+  if (!data.prompts.length) list.append(el('li', 'No prompts yet.', 'muted'));
+  for (const p of data.prompts) {
+    const li = el('li');
+    li.append(el('strong', p.track), document.createTextNode(' due ' + new Date(p.deadline).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })));
+    list.append(li);
+  }
 }
 
 function teamCard(team) {
@@ -309,7 +347,19 @@ function teamCard(team) {
     for (const [k, v] of [['Credential', team.label], ['Key', team.keySourceText], ['Fingerprint', team.fingerprint]]) {
       facts.append(el('dt', k), el('dd', v || ''));
     }
-    card.append(facts, rosterList(team, false), el('p', 'Roster locked', 'locked'));
+    facts.append(el('dt', 'Prompt'), el('dd', team.assignedTrack || 'None assigned'));
+    if (team.assignedTrack) {
+      const status = el('dd');
+      status.append(
+        team.revealedAt
+          ? el('span', 'Revealed ' + new Date(team.revealedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), 'chip chip-green')
+          : el('span', 'Not revealed', 'chip chip-red')
+      );
+      facts.append(el('dt', 'Revealed'), status);
+    }
+    card.append(facts);
+    if (team.state === 'ENROLLED' && lastData.prompts.length) card.append(assignForm(team));
+    card.append(rosterList(team, false), el('p', 'Roster locked', 'locked'));
   }
   return card;
 }
@@ -332,6 +382,8 @@ function render(data) {
     chain.className = 'chain-strip chain-broken';
   }
   $('chain-head').textContent = data.chain.head || 'none';
+
+  renderPrompts(data);
 
   const teams = $('teams');
   teams.replaceChildren(...(data.teams.length ? data.teams.map(teamCard) : [el('p', 'No teams yet.', 'muted')]));
@@ -372,6 +424,30 @@ $('new-team').addEventListener('submit', async (e) => {
   load();
 });
 
+// Default deadline: two hours from now, in this browser's local time.
+function defaultDeadline() {
+  const d = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  d.setSeconds(0, 0);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+$('prompt-deadline').value = defaultDeadline();
+
+$('new-prompt').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const local = $('prompt-deadline').value;
+  const deadline = local ? new Date(local).toISOString() : '';
+  try {
+    await api('/api/org/prompts', { body: { track: $('prompt-track').value, instructions: $('prompt-instructions').value, deadline } });
+  } catch (_) {
+    return;
+  }
+  $('prompt-track').value = '';
+  $('prompt-instructions').value = '';
+  $('prompt-deadline').value = defaultDeadline();
+  clearBanners();
+  load();
+});
+
 $('login-button').addEventListener('click', async () => {
   const loginButton = $('login-button');
   loginButton.disabled = true;
@@ -386,7 +462,8 @@ $('login-button').addEventListener('click', async () => {
     let assertion;
     try {
       assertion = await startAuthentication({ optionsJSON: start.options });
-    } catch (_) {
+    } catch (err) {
+      reportTapFailure(start.ceremonyId, err);
       // SRS.md FR-02 and FR-11: any browser side failure on an organizer tap.
       showFail(QT_BANNER.ORG_TAP_CANCELLED);
       return;

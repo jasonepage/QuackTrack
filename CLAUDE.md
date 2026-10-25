@@ -63,8 +63,8 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/webauthn.js | Wrap SimpleWebAuthn calls and the pending ceremony map | Reuse a challenge |
 | src/routes/org.js | Organizer setup, login, console, prompts, assign, reset, seed | Answer a request without an organizer session |
 | src/routes/enroll.js (roster changes after enrollment in T12, override in T11) | Draft teams, roster edits, key source, enroll ceremony, roster add with the team's tap, override ceremony | Add a member after enrollment without the team's key tap, or finish an override without the organizer tap |
-| src/routes/tap.js (planned T5) | Team tap ceremony, reveal, client failure report | Mint a session without a verified assertion |
-| src/routes/team.js (planned T5) | Read tier team room, member select, download | Take a team ID from the request |
+| src/routes/tap.js | Team tap ceremony, reveal, client failure report | Mint a session without a verified assertion |
+| src/routes/team.js | Read tier team room, member select, download | Take a team ID from the request |
 | src/routes/sign.js (planned T6) | Sign ceremony and submission creation | Create a submission without a verified assertion |
 | src/routes/public.js (receipts added in T6) | Public team list and receipts | Return a prompt, secret, or roster |
 | src/ai/askFAQ.js (planned T8) | Pick provider, enforce grounding, refusal, unanswered log | Read the store beyond the context bundle |
@@ -81,6 +81,6 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | public/support.html | Plain words help: organizer desk, lost or broken key, common problems, GitHub Issues | Link to the organizer console |
 | public/setup.html, public/js/setup.js | Organizer first credential enrollment | Work without the setup token |
 | public/console.html, public/js/console.js | Organizer console | Cache data in localStorage |
-| public/team.html, public/js/team.js (planned T5) | Team picker and tap in | Show anything about a prompt |
-| public/room.html, public/js/room.js (planned T5) | Team room | Render any field with innerHTML |
+| public/team.html, public/js/team.js | Team picker and tap in | Show anything about a prompt |
+| public/room.html, public/js/room.js | Team room | Render any field with innerHTML |
 | public/receipt.html, public/js/receipt.js (planned T6) | Public receipt and its verification checks | Show the prompt |

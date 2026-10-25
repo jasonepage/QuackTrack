@@ -10,11 +10,12 @@ const config = require('../config');
 const { store } = require('../store');
 const { failWith } = require('../errors');
 const { body, query, setupLimit, orgCeremonyLimit } = require('../validate');
-const { b64u } = require('../canon');
+const canon = require('../canon');
+const { b64u } = canon;
 const log = require('../log');
 const sessions = require('../sessions');
 const wa = require('../webauthn');
-const { teamRows } = require('./enroll');
+const { teamRows, getTeam } = require('./enroll');
 
 const router = express.Router();
 const ORG_ACTOR = Object.freeze({ kind: 'organizer', id: 'organizer' });
@@ -142,6 +143,61 @@ router.post('/login/verify', body(CEREMONY_VERIFY), async (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- FR-07 Create prompt assignment ----------
+// Track and instructions are sealed (L2): they leave the server only in an
+// organizer response or in that team's own reveal and room after its tap.
+router.post(
+  '/prompts',
+  sessions.requireOrg,
+  body({
+    track: { type: 'string', label: 'Track' },
+    instructions: { type: 'string', label: 'Instructions' },
+    deadline: { type: 'string', label: 'Deadline', max: 40 },
+  }),
+  (req, res) => {
+    const track = canon.norm(req.body.track);
+    const instructions = canon.norm(req.body.instructions);
+    if (!track || !instructions) return failWith(res, 'PROMPT_EMPTY');
+    if ([...track].length > 60) return failWith(res, 'BAD_LENGTH', { label: 'Track', min: 1, max: 60 });
+    if ([...instructions].length > 4000) return failWith(res, 'BAD_LENGTH', { label: 'Instructions', min: 1, max: 4000 });
+    const when = Date.parse(req.body.deadline);
+    if (!Number.isFinite(when)) return failWith(res, 'BAD_TYPE', { label: 'Deadline' });
+    if (when <= Date.now()) return failWith(res, 'DEADLINE_PAST');
+    const prompt = {
+      id: 'pr_' + crypto.randomBytes(8).toString('hex'),
+      track,
+      instructions,
+      deadline: new Date(when).toISOString(),
+      warned30: false,
+      createdAt: new Date().toISOString(),
+    };
+    log.append(ORG_ACTOR, 'prompt.created', { promptId: prompt.id, deadline: prompt.deadline });
+    store.prompts.set(prompt.id, prompt);
+    res.json({ ok: true, prompt: { id: prompt.id, track: prompt.track, deadline: prompt.deadline } });
+  }
+);
+
+// ---------- FR-08 Assign prompt ----------
+router.post(
+  '/assign',
+  sessions.requireOrg,
+  body({
+    teamId: { type: 'string', label: 'Team', min: 1, max: 40 },
+    promptId: { type: 'string', label: 'Prompt', min: 1, max: 40 },
+  }),
+  (req, res) => {
+    const team = getTeam(req.body.teamId);
+    if (!team) return failWith(res, 'TEAM_NOT_FOUND');
+    const prompt = store.prompts.get(req.body.promptId);
+    if (!prompt) return failWith(res, 'PROMPT_NOT_FOUND');
+    if (team.state === 'DRAFT') return failWith(res, 'NOT_ENROLLED', { team: team.name });
+    if (team.state !== 'ENROLLED') return failWith(res, 'ALREADY_REVEALED', { team: team.name });
+    log.append(ORG_ACTOR, 'prompt.assigned', { teamId: team.id, promptId: prompt.id });
+    team.assignedPromptId = prompt.id;
+    res.json({ ok: true });
+  }
+);
+
 // ---------- Read (org) ----------
 router.post('/logout', sessions.requireOrg, body({}), (req, res) => {
   sessions.logout(req, res, 'organizer');
@@ -154,6 +210,9 @@ router.get('/console', sessions.requireOrg, query({}), (req, res) => {
   res.json({
     ok: true,
     teams: teamRows(),
+    prompts: [...store.prompts.values()]
+      .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
+      .map((p) => ({ id: p.id, track: p.track, deadline: p.deadline })),
     log: store.log.slice(-20),
     chain: { ok: chain.ok, head: chain.head, brokenAt: chain.brokenAt, count: chain.count },
   });

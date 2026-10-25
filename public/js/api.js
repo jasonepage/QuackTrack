@@ -15,6 +15,7 @@ const QT_BANNER = Object.freeze({
   ORG_TAP_CANCELLED: 'The key tap was cancelled. Nothing changed.', // E16
   ENROLL_CANCELLED: 'The key tap was cancelled. Nothing was enrolled.', // E34
   KEY_TAKEN: 'This key is already enrolled to another team or the organizer. Use a different key.', // E32
+  WRONG_KEY_OR_CANCEL: "That was not {team}'s key, or the tap was cancelled. Nothing was revealed.", // E42
 });
 
 class ApiError extends Error {
@@ -95,4 +96,49 @@ async function api(path, { method, body, silent = false } = {}) {
     throw new ApiError(res.status, data.code, data.error);
   }
   return data;
+}
+
+// Fill {placeholders} in a banner sentence from QT_BANNER.
+function qtFill(text, vars) {
+  return text.replace(/\{([a-z]+)\}/g, (_, k) => String(vars[k]));
+}
+
+// SRS.md FR-11: tell the server the browser refused or cancelled a tap, so
+// the console log shows the attempt. The page has already shown its own
+// banner for the tap, so a failed report only goes to the browser console.
+function reportTapFailure(ceremonyId, err) {
+  const errorName = String((err && err.name) || 'Error').slice(0, 40);
+  return api('/api/tap/client-failure', { body: { ceremonyId, errorName }, silent: true }).catch((e) => {
+    console.warn('QuackTrack: tap failure report not sent:', e.message);
+  });
+}
+
+// The team tap ceremony (SDS.md 5.2), shared by /team and the room's
+// "Tap to reveal". startAuthentication is passed in from the page module.
+// Returns the verify response, or null after showing the right banner.
+async function teamTap(startAuthentication, team, onWaiting) {
+  clearBanners();
+  let start;
+  try {
+    start = await api('/api/tap/options', { body: { teamId: team.id, purpose: 'enter' } });
+  } catch (_) {
+    return null;
+  }
+  if (onWaiting) onWaiting(true);
+  let assertion;
+  try {
+    assertion = await startAuthentication({ optionsJSON: start.options });
+  } catch (err) {
+    if (onWaiting) onWaiting(false);
+    reportTapFailure(start.ceremonyId, err);
+    showFail(qtFill(QT_BANNER.WRONG_KEY_OR_CANCEL, { team: team.name }));
+    return null;
+  }
+  try {
+    return await api('/api/tap/verify', { body: { ceremonyId: start.ceremonyId, response: assertion } });
+  } catch (_) {
+    return null;
+  } finally {
+    if (onWaiting) onWaiting(false);
+  }
 }

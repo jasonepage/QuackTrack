@@ -37,7 +37,8 @@ function isPlainObject(v) {
 
 // Spec format, one entry per allowed field:
 //   { type: 'string'|'boolean'|'number'|'object', label, required (default true),
-//     min, max (string lengths), oneOf: [...], rule: 'handle'|'https' }
+//     min, max (string lengths), oneOf: [...], oneOfCode (dictionary code
+//     used instead of E03 when the value is not in oneOf), rule: 'handle'|'https' }
 // Returns null when the input passes, or { code, vars } for errors.failWith.
 // Order: unknown fields (E01), then each field in spec order.
 function check(input, spec) {
@@ -68,7 +69,9 @@ function check(input, spec) {
       }
     }
     if (rule.rule === 'https' && !isHttpsUrl(value)) return { code: 'REPO_NOT_HTTPS', vars: {} };
-    if (rule.oneOf && !rule.oneOf.includes(value)) return { code: 'BAD_TYPE', vars: { label } };
+    if (rule.oneOf && !rule.oneOf.includes(value)) {
+      return rule.oneOfCode ? { code: rule.oneOfCode, vars: {} } : { code: 'BAD_TYPE', vars: { label } };
+    }
   }
   return null;
 }

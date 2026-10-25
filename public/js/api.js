@@ -14,6 +14,7 @@ const QT_SERVER_SENTENCE = 'Something broke on the server. The organizer can che
 const QT_BANNER = Object.freeze({
   ORG_TAP_CANCELLED: 'The key tap was cancelled. Nothing changed.', // E16
   ENROLL_CANCELLED: 'The key tap was cancelled. Nothing was enrolled.', // E34
+  KEY_TAKEN: 'This key is already enrolled to another team or the organizer. Use a different key.', // E32
 });
 
 class ApiError extends Error {

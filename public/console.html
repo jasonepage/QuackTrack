@@ -25,6 +25,21 @@
       <p class="chain-head">Head <code id="chain-head"></code></p>
 
       <div class="console-bar">
+        <h2>Teams</h2>
+      </div>
+      <form id="new-team" class="inline-form" autocomplete="off">
+        <label>Team name <input id="new-team-name" name="name" maxlength="40" required></label>
+        <label>Credential
+          <select id="new-team-mode" name="mode">
+            <option value="key">Security key</option>
+            <option value="passkey">Solo passkey</option>
+          </select>
+        </label>
+        <button class="small-button" type="submit">New team</button>
+      </form>
+      <div id="teams" class="team-list"></div>
+
+      <div class="console-bar">
         <h2>Action log</h2>
         <a class="text-link" href="/api/org/log.json" download="quacktrack-log.json">Download log</a>
       </div>

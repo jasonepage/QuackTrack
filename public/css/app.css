@@ -383,6 +383,149 @@ a:focus-visible {
   overflow-wrap: anywhere;
 }
 
+/* ---------- Console team rows (T4) ---------- */
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+  margin: 0.75rem 0;
+}
+.inline-form label,
+.key-source label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.inline-form input,
+.inline-form select {
+  min-width: 10rem;
+  padding: 0.5rem 0.625rem;
+  border: 2px solid var(--ink);
+  border-radius: 0.375rem;
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 400;
+}
+.small-button {
+  padding: 0.55rem 1rem;
+  border: 3px solid var(--ink);
+  border-radius: 0.5rem;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.small-button.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.small-button:hover,
+.small-button:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+}
+.small-button.primary:hover,
+.small-button.primary:focus-visible {
+  background: var(--paper);
+  color: var(--ink);
+}
+.team-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.team-card {
+  padding: 1rem 1.25rem;
+  border: 3px solid var(--ink);
+  border-radius: 0.75rem;
+}
+.team-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+.team-head h3 { margin: 0; font-size: 1.75rem; }
+/* FR-39: state word in capitals on a colored block, grey for DRAFT,
+   green for SUBMITTED, red for the rest. The word is always there. */
+.state-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  color: #fff;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.state-draft { background: var(--grey); }
+.state-enrolled,
+.state-revealed { background: var(--red); }
+.state-submitted { background: var(--green); }
+.roster {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}
+.roster li { margin-bottom: 0.35rem; }
+.roster .link-button { margin-left: 0.75rem; }
+.key-source {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 2px dashed var(--ink);
+  border-radius: 0.5rem;
+}
+.key-source h4 { margin: 0 0 0.5rem; font-size: 1.25rem; }
+.radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+.key-source .radio-row label,
+.key-source .check-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+}
+.key-source input[type="radio"],
+.key-source input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--ink);
+}
+.tag-rule {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--yellow);
+  border-radius: 0.375rem;
+  font-weight: 700;
+}
+.team-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+/* FR-38 enroll moment: at least 32px while the browser waits for the key. */
+.tap-now {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 800;
+}
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0.75rem 0;
+}
+.facts dt { font-weight: 700; }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+.locked { margin: 0; font-weight: 700; }
+
 /* ---------- Footer ---------- */
 .footer {
   margin-top: 3.5rem;

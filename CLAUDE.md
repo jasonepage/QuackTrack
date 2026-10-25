@@ -62,11 +62,11 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/sessions.js | Mint, read, expire, and revoke sessions, set cookies | Accept a session ID that fails the HMAC check |
 | src/webauthn.js | Wrap SimpleWebAuthn calls and the pending ceremony map | Reuse a challenge |
 | src/routes/org.js | Organizer setup, login, console, prompts, assign, reset, seed | Answer a request without an organizer session |
-| src/routes/enroll.js (planned T4, override in T11) | Draft teams, roster edits, key source, enroll ceremony, override ceremony | Change a roster after enrollment, or finish an override without the organizer tap |
+| src/routes/enroll.js (override added in T11) | Draft teams, roster edits, key source, enroll ceremony, override ceremony | Change a roster after enrollment, or finish an override without the organizer tap |
 | src/routes/tap.js (planned T5) | Team tap ceremony, reveal, client failure report | Mint a session without a verified assertion |
 | src/routes/team.js (planned T5) | Read tier team room, member select, download | Take a team ID from the request |
 | src/routes/sign.js (planned T6) | Sign ceremony and submission creation | Create a submission without a verified assertion |
-| src/routes/public.js (planned T4) | Public team list and receipts | Return a prompt, secret, or roster |
+| src/routes/public.js (receipts added in T6) | Public team list and receipts | Return a prompt, secret, or roster |
 | src/ai/askFAQ.js (planned T8) | Pick provider, enforce grounding, refusal, unanswered log | Read the store beyond the context bundle |
 | src/ai/gemini.js (planned T8) | Call the Gemini API | Log or return the API key |
 | src/ai/gemma.js (planned T8) | Call Ollama | Call any host except OLLAMA_URL |

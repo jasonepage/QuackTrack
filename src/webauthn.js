@@ -135,6 +135,27 @@ function organizerLabel(info, response) {
   return passesKeyChecks(info, response) ? 'Organizer key' : 'Organizer passkey';
 }
 
+// SRS.md FR-06 label rule for a team. Returns the label, or null when a
+// 'key' mode team tapped something that is not a physical key (E33).
+function teamLabel(mode, info, response) {
+  const key = passesKeyChecks(info, response);
+  if (mode === 'key') return key ? 'Security key' : null;
+  if (key) return 'Security key';
+  return info.credentialBackedUp ? 'Platform passkey (synced)' : 'Platform passkey';
+}
+
+// SDS.md D6: only physical key credentials (ACTIVE or REVOKED) go in
+// excludeCredentials. Listing a platform passkey would make the laptop's
+// whole platform authenticator refuse. The server still rejects every
+// repeated credential ID of every type.
+function excludeList() {
+  const out = [];
+  for (const c of store.credentials.values()) {
+    if (c.label === 'Security key' || c.label === 'Organizer key') out.push({ id: c.id, transports: c.transports });
+  }
+  return out;
+}
+
 // SDS.md 6.7: first 16 hex characters of SHA-256 of the public key.
 function fingerprint(publicKey) {
   return sha256(Buffer.from(publicKey)).toString('hex').slice(0, 16);
@@ -209,6 +230,8 @@ module.exports = {
   verifyRegistration,
   passesKeyChecks,
   organizerLabel,
+  teamLabel,
+  excludeList,
   fingerprint,
   formatFingerprint,
   credentialRecord,

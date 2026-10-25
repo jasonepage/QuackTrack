@@ -14,6 +14,7 @@ const { b64u } = require('../canon');
 const log = require('../log');
 const sessions = require('../sessions');
 const wa = require('../webauthn');
+const { teamRows } = require('./enroll');
 
 const router = express.Router();
 const ORG_ACTOR = Object.freeze({ kind: 'organizer', id: 'organizer' });
@@ -147,11 +148,12 @@ router.post('/logout', sessions.requireOrg, body({}), (req, res) => {
   res.json({ ok: true });
 });
 
-// FR-31, T3 part: the log tail and chain status. Later tickets add rows.
+// FR-31: team rows (T4), the log tail and chain status (T3). Later tickets add more.
 router.get('/console', sessions.requireOrg, query({}), (req, res) => {
   const chain = log.chainStatus();
   res.json({
     ok: true,
+    teams: teamRows(),
     log: store.log.slice(-20),
     chain: { ok: chain.ok, head: chain.head, brokenAt: chain.brokenAt, count: chain.count },
   });

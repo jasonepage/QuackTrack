@@ -11,6 +11,8 @@ const { say, failWith, sendPlainPage, errorHandler, TERMINAL_RP_ID } = require('
 const { jsonBody } = require('./src/validate');
 const log = require('./src/log');
 const org = require('./src/routes/org');
+const enroll = require('./src/routes/enroll');
+const publicRoutes = require('./src/routes/public');
 
 // NFR-02 boot check: stop before listening if WebAuthn would refuse every tap.
 if (!config.rpIdMatchesOrigin()) {
@@ -78,6 +80,8 @@ app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] })
 
 // Routes. Later tickets mount theirs here.
 app.use('/api/org', org.router);
+app.use('/api/org', enroll.router);
+app.use('/api/public', publicRoutes.router);
 
 // Unknown paths: a bare 404 with no body. SRS.md 4A has no sentence for an
 // unknown path, so none is invented.

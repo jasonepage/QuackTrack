@@ -8,6 +8,13 @@ const $ = (id) => document.getElementById(id);
 const TAG_RULE =
   'Attach a bright tag to this key. Write only the team name and "Return to the organizer desk" on the tag. Never write a credential ID or PIN on it.';
 const APPROVE_TEXT = 'I checked this team in person and approve their own key.';
+// FR-32: green when the repo owner is on the signed roster, yellow when
+// not, grey for repos that are not on GitHub.
+const OWNER_CHECK = {
+  match: ['Owner on roster', 'chip-green'],
+  nomatch: ['Owner not on roster', 'chip-yellow-text'],
+  notgithub: ['Not GitHub', 'chip-grey'],
+};
 
 // One click presets for the pool key fields. Both fields stay free text
 // (FR-40: 1 to 20 characters). Red and green are left out on purpose:
@@ -328,6 +335,22 @@ function teamCard(team) {
           : el('span', 'Not revealed', 'chip chip-red')
       );
       facts.append(el('dt', 'Revealed'), status);
+    }
+    // FR-31 submission columns and FR-32 owner check (T6). Words on every chip.
+    const submitted = el('dd');
+    submitted.append(
+      team.submittedAt
+        ? el('span', 'Submitted ' + new Date(team.submittedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), 'chip chip-green')
+        : el('span', 'Not submitted', 'chip chip-red')
+    );
+    facts.append(el('dt', 'Submitted'), submitted);
+    if (team.submittedAt) {
+      facts.append(el('dt', 'Hash'), el('dd', team.shortHash, 'hash-cell'));
+      facts.append(el('dt', 'Commit'), el('dd', team.commitShort, 'hash-cell'));
+      const owner = el('dd');
+      const [text, cls] = OWNER_CHECK[team.ownerCheck] || OWNER_CHECK.notgithub;
+      owner.append(el('span', text, 'chip ' + cls));
+      facts.append(el('dt', 'Repo owner'), owner);
     }
     card.append(facts);
     if (team.state === 'ENROLLED' && lastData.prompts.length) card.append(assignForm(team));

@@ -25,6 +25,13 @@ function sessionTeam(req, res) {
   return team;
 }
 
+// FR-13 submission summary: the receipt link after signing, else null.
+function submissionSummary(team) {
+  const sub = team.submissionId ? store.submissions.get(team.submissionId) : null;
+  if (!sub) return null;
+  return { id: sub.id, shortHash: sub.contentHash.slice(0, 8), signedAt: sub.signedAt, receiptUrl: `/receipt/${sub.id}` };
+}
+
 // FR-13 room object. The prompt is included only after this team revealed it (L2).
 function roomView(team, session) {
   const cred = team.credentialId ? store.credentials.get(team.credentialId) : null;
@@ -47,6 +54,7 @@ function roomView(team, session) {
     promptState,
     prompt: promptState === 'revealed' ? { track: prompt.track, instructions: prompt.instructions, deadline: prompt.deadline } : null,
     revealedAt: team.revealedAt,
+    submission: submissionSummary(team),
     notices,
   };
 }

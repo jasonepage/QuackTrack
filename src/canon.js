@@ -79,10 +79,15 @@ function enrollChallenge(rosterHashBuf, nonce) {
 
 // ---------- 6.1 Sign: content hash and challenge ----------
 // fields: { teamId, projectName, repoUrl, commitSha, description }.
-// declaration defaults to DECLARATION_V1; a receipt passes the stored text.
-function submissionCanonical(fields, declaration = DECLARATION_V1) {
+// rosterHashHex: the team's current roster hash, 64 lowercase hex (D15).
+// It is the last element, so the Sign tap covers the roster and a receipt
+// shows the roster the team signed. declaration defaults to DECLARATION_V1;
+// a receipt passes the stored text.
+const HASH_HEX_RE = /^[0-9a-f]{64}$/;
+function submissionCanonical(fields, rosterHashHex, declaration = DECLARATION_V1) {
   const commitSha = norm(fields.commitSha).toLowerCase();
   if (!COMMIT_RE.test(commitSha)) throw new Error('commitSha must be 40 hex characters');
+  if (typeof rosterHashHex !== 'string' || !HASH_HEX_RE.test(rosterHashHex)) throw new Error('rosterHashHex must be 64 lowercase hex characters');
   return canon([
     'quacktrack-submission-v1',
     fields.teamId,
@@ -91,6 +96,7 @@ function submissionCanonical(fields, declaration = DECLARATION_V1) {
     commitSha,
     norm(fields.description),
     declaration,
+    rosterHashHex,
   ]);
 }
 function contentHash(canonical) {

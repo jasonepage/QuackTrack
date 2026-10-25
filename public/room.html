@@ -24,6 +24,19 @@
 
       <section id="prompt" class="prompt-card" aria-live="polite"></section>
 
+      <section id="submit" class="room-section" hidden>
+        <h2>Submission</h2>
+        <form id="sign-form" class="prompt-form sign-form" autocomplete="off" novalidate>
+          <label>Project name <input id="sign-project" maxlength="80"></label>
+          <label>Repo link <input id="sign-repo" type="url" maxlength="200" placeholder="https://github.com/owner/repo" spellcheck="false"></label>
+          <label>Commit SHA <input id="sign-commit" maxlength="40" placeholder="Paste the output of git rev-parse HEAD" spellcheck="false" autocapitalize="off" class="mono"></label>
+          <label>Description <textarea id="sign-description" maxlength="1000" rows="4"></textarea></label>
+          <label class="check-row declare-row"><input id="sign-declared" type="checkbox"> We declare that this project was built during this event.</label>
+          <button id="sign-button" class="action-button" type="submit">Sign submission</button>
+        </form>
+        <div id="sign-panel" class="sign-panel" aria-live="polite" hidden></div>
+      </section>
+
       <section class="room-section">
         <h2>Who is at the keyboard?</h2>
         <div id="members" class="member-picker"></div>

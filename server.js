@@ -15,6 +15,7 @@ const enroll = require('./src/routes/enroll');
 const publicRoutes = require('./src/routes/public');
 const tap = require('./src/routes/tap');
 const team = require('./src/routes/team');
+const sign = require('./src/routes/sign');
 
 // NFR-02 boot check: stop before listening if WebAuthn would refuse every tap.
 if (!config.rpIdMatchesOrigin()) {
@@ -86,6 +87,13 @@ app.use('/api/org', enroll.router);
 app.use('/api/public', publicRoutes.router);
 app.use('/api/tap', tap.router);
 app.use('/api/team', team.router);
+app.use('/api/sign', sign.router);
+
+// FR-30 receipt page: the same static file for every receipt ID. The page
+// reads the ID from its own address and fetches /api/public/receipt/:id.
+app.get('/receipt/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'receipt.html'));
+});
 
 // Unknown paths: a bare 404 with no body. SRS.md 4A has no sentence for an
 // unknown path, so none is invented.

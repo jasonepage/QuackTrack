@@ -730,6 +730,111 @@ a:focus-visible {
   color: var(--paper);
 }
 
+/* ---------- Sign form, signing panel, receipt moment (T6) ---------- */
+.mono,
+.sign-form .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.sign-form .declare-row {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 1.375rem;
+}
+.sign-form .declare-row input {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.2rem;
+  flex: none;
+  accent-color: var(--ink);
+}
+.sign-form .action-button { margin-top: 0.5rem; }
+.sign-panel {
+  margin: 1rem 0;
+  padding: 1.5rem;
+  border: 3px solid var(--ink);
+  border-radius: 0.75rem;
+}
+.sign-locked { background: var(--soft); }
+.declare-line { font-weight: 700; }
+/* FR-38 sign moment: the short hash in monospace, at least 64px. */
+.signing-line {
+  margin: 1rem 0 0;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.big-hash {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 72px;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+/* FR-38 receipt moment: green panel, Signed line at least 48px bold. */
+.sign-done {
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
+}
+.signed-line {
+  margin: 0 0 0.5rem;
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.signed-time { margin: 0 0 1rem; font-size: 1.5rem; font-weight: 700; }
+.action-link {
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  border: 3px solid #fff;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--ink);
+  font-size: 1.75rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.action-link:hover,
+.action-link:focus-visible { background: var(--ink); color: #fff; }
+
+/* Console submission columns (FR-31, FR-32). Words on every chip. */
+.chip-yellow-text { background: var(--yellow); color: var(--ink); }
+.chip-grey { background: var(--grey); color: #fff; }
+.hash-cell { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; }
+
+/* ---------- Receipt page (T6, FR-30, FR-38) ---------- */
+.receipt h1 { margin: 0.5rem 0; font-size: clamp(2.5rem, 7vw, 3.5rem); line-height: 1.05; }
+.receipt-hash {
+  margin: 0 0 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+.checks { display: grid; gap: 0.75rem; margin: 1.5rem 0; }
+.check-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  color: #fff;
+}
+.check-pass { background: var(--green); }
+.check-fail { background: var(--red); }
+.check-word { font-size: 40px; font-weight: 800; min-width: 6rem; }
+.check-label { font-size: 32px; font-weight: 700; }
+.check-why { flex-basis: 100%; margin: 0; font-size: 32px; font-weight: 700; }
+.raw-facts dd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.facts.receipt-facts { grid-template-columns: minmax(8rem, max-content) 1fr; }
+
 /* ---------- Footer ---------- */
 .footer {
   margin-top: 3.5rem;

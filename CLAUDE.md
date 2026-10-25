@@ -51,7 +51,7 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | .gitignore | Keep node_modules, .env, and logs out of git | Be removed |
 | LICENSE | MIT license text | Change license |
 | README.md | How to run local mode and hosted mode, env var table | Contain a real key or secret |
-| server.js | Create the Express app, guards, mount routes, start listening | Hold business logic |
+| server.js | Create the Express app, guards, mount routes, serve the static receipt page at /receipt/:id, start listening | Hold business logic |
 | src/config.js | Read env vars and apply defaults | Read any env var not in the stack list |
 | src/errors.js | `fail(res, status, code, sentence)`, the error envelope, and the SRS.md section 4A dictionary | Send a stack trace or a sentence that is not in the dictionary |
 | src/store.js | In-memory maps and `resetStore()` | Write to disk |
@@ -62,11 +62,11 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/sessions.js | Mint, read, expire, and revoke sessions, set cookies | Accept a session ID that fails the HMAC check |
 | src/webauthn.js | Wrap SimpleWebAuthn calls and the pending ceremony map | Reuse a challenge |
 | src/routes/org.js | Organizer setup, login, console, prompts, assign, reset, seed | Answer a request without an organizer session |
-| src/routes/enroll.js (override added in T11) | Draft teams, key source, enroll ceremony, roster removal, override ceremony | Put a member on a roster (members join through tap.js), or finish an override without the organizer tap |
+| src/routes/enroll.js (override added in T11) | Draft teams, key source, enroll ceremony, roster removal, console team rows with submission columns, override ceremony | Put a member on a roster (members join through tap.js), or finish an override without the organizer tap |
 | src/routes/tap.js | Team tap ceremony, join (T12), reveal, client failure report | Mint a session without a verified assertion |
-| src/routes/team.js | Read tier team room, member select, download | Take a team ID from the request |
-| src/routes/sign.js (planned T6) | Sign ceremony and submission creation | Create a submission without a verified assertion |
-| src/routes/public.js (receipts added in T6) | Public team list and receipts | Return a prompt, secret, or roster |
+| src/routes/team.js | Read tier team room with its submission summary, member select, download | Take a team ID from the request |
+| src/routes/sign.js | Sign ceremony, submission creation with the signed roster copy, repo owner check | Create a submission without a verified assertion |
+| src/routes/public.js | Public team list and receipts with their three checks | Return a prompt, secret, or roster, except the signed roster copy on a receipt |
 | src/ai/askFAQ.js (planned T8) | Pick provider, enforce grounding, refusal, unanswered log | Read the store beyond the context bundle |
 | src/ai/gemini.js (planned T8) | Call the Gemini API | Log or return the API key |
 | src/ai/gemma.js (planned T8) | Call Ollama | Call any host except OLLAMA_URL |
@@ -82,5 +82,5 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | public/setup.html, public/js/setup.js | Organizer first credential enrollment | Work without the setup token |
 | public/console.html, public/js/console.js | Organizer console | Cache data in localStorage |
 | public/team.html, public/js/team.js | Team picker and tap in | Show anything about a prompt |
-| public/room.html, public/js/room.js | Team room | Render any field with innerHTML |
-| public/receipt.html, public/js/receipt.js (planned T6) | Public receipt and its verification checks | Show the prompt |
+| public/room.html, public/js/room.js | Team room, sign form, locked signing panel, receipt moment, `QT_TEST.tamperSign` | Render any field with innerHTML |
+| public/receipt.html, public/js/receipt.js | Public receipt and its verification checks | Show the prompt |

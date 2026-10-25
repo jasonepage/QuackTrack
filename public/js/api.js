@@ -16,6 +16,8 @@ const QT_BANNER = Object.freeze({
   ENROLL_CANCELLED: 'The key tap was cancelled. Nothing was enrolled.', // E34
   KEY_TAKEN: 'This key is already enrolled to another team or the organizer. Use a different key.', // E32
   WRONG_KEY_OR_CANCEL: "That was not {team}'s key, or the tap was cancelled. Nothing was revealed.", // E42
+  NOT_SIGNED: 'The submission was not signed. Nothing was submitted.', // E66
+  CHECK_FAILED: 'This check failed. The receipt does not match its signature.', // E69 (receipt page)
 });
 
 class ApiError extends Error {

@@ -47,6 +47,7 @@ function keySourceText(team) {
 function teamRow(team) {
   const cred = team.credentialId ? store.credentials.get(team.credentialId) : null;
   const prompt = team.assignedPromptId ? store.prompts.get(team.assignedPromptId) : null;
+  const sub = team.submissionId ? store.submissions.get(team.submissionId) : null;
   return {
     id: team.id,
     name: team.name,
@@ -65,6 +66,11 @@ function teamRow(team) {
     assignedTrack: prompt ? prompt.track : null,
     deadline: prompt ? prompt.deadline : null,
     revealedAt: team.revealedAt,
+    // FR-31 submission columns (T6): time, short hash, commit, owner check.
+    submittedAt: sub ? sub.signedAt : null,
+    shortHash: sub ? sub.contentHash.slice(0, 8) : null,
+    commitShort: sub ? sub.commitSha.slice(0, 7) : null,
+    ownerCheck: sub ? sub.ownerCheck : null,
   };
 }
 

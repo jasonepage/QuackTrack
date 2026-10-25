@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receipt: QuackTrack</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js"></script>
+  <script src="/js/receipt.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="wordmark" href="/">QuackTrack</a>
+  </header>
+
+  <main class="wrap doc receipt">
+    <div id="receipt" hidden>
+      <p class="step-num">Submission receipt</p>
+      <h1 id="r-team"></h1>
+      <p id="r-hash" class="receipt-hash"></p>
+
+      <div id="checks" class="checks" aria-live="polite"></div>
+
+      <dl id="r-facts" class="facts receipt-facts"></dl>
+
+      <button id="download" class="small-button" type="button">Download receipt JSON</button>
+
+      <h2>Verification data</h2>
+      <p class="muted">Everything needed to re-check the signature.</p>
+      <dl id="r-raw" class="facts receipt-facts raw-facts"></dl>
+    </div>
+  </main>
+</body>
+</html>

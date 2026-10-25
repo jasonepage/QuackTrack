@@ -1,0 +1,19 @@
+{
+  "name": "quacktrack",
+  "version": "0.1.0",
+  "description": "Hackathon submissions where one FIDO2 security key is a team's identity.",
+  "private": true,
+  "license": "MIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.3",
+    "express": "^5.3.0"
+  }
+}

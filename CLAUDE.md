@@ -46,15 +46,16 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | PRODUCT.md | Actors, ceremonies, demo script, open question defaults | Describe features the SRS does not require |
 | SRS.md | Testable requirements, invariants, state machines | Contain a requirement without a failure case |
 | SDS.md | Design, endpoints, tickets, cut lines | Design anything the SRS does not require |
-| package.json (planned T1) | Dependencies and `npm start` | Add a dependency beyond express and the two @simplewebauthn packages |
-| .gitignore (planned T1) | Keep node_modules, .env, and logs out of git | Be removed |
-| LICENSE (planned T1) | MIT license text | Change license |
-| README.md (planned T1) | How to run local mode and hosted mode, env var table | Contain a real key or secret |
-| server.js (planned T1) | Create the Express app, guards, mount routes, start listening | Hold business logic |
-| src/config.js (planned T1) | Read env vars and apply defaults | Read any env var not in the stack list |
-| src/errors.js (planned T1) | `fail(res, status, code, sentence)`, the error envelope, and the SRS.md section 4A dictionary | Send a stack trace or a sentence that is not in the dictionary |
-| src/store.js (planned T1) | In-memory maps and `resetStore()` | Write to disk |
-| src/validate.js (planned T1) | Schema checks, unknown field rejection, handle and URL rules, rate limiter | Read the store |
+| package.json | Dependencies and `npm start` | Add a dependency beyond express and the two @simplewebauthn packages |
+| package-lock.json | Exact installed dependency versions, written by `npm install` | Be edited by hand |
+| .gitignore | Keep node_modules, .env, and logs out of git | Be removed |
+| LICENSE | MIT license text | Change license |
+| README.md | How to run local mode and hosted mode, env var table | Contain a real key or secret |
+| server.js | Create the Express app, guards, mount routes, start listening | Hold business logic |
+| src/config.js | Read env vars and apply defaults | Read any env var not in the stack list |
+| src/errors.js | `fail(res, status, code, sentence)`, the error envelope, and the SRS.md section 4A dictionary | Send a stack trace or a sentence that is not in the dictionary |
+| src/store.js | In-memory maps and `resetStore()` | Write to disk |
+| src/validate.js | Schema checks, unknown field rejection, handle and URL rules, rate limiter | Read the store |
 | src/canon.js (planned T2) | `norm`, `canon`, `sha256`, challenge and hash derivations | Use JSON.stringify on objects without key sorting |
 | src/log.js (planned T2) | Append and verify the hash chained action log | Store prompt text, secret text, or chat text |
 | scripts/verify-log.js (planned T2) | Verify an exported log file from the command line | Import anything from the running server |
@@ -73,9 +74,9 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/routes/commons.js (planned T9) | Team chat, public commons, moderation | Trust a team or handle sent by the client |
 | src/drama.js (planned T9) | Turn log entries and deadlines into public system posts | Read prompt or secret fields |
 | src/routes/secrets.js (parked: T10 cut by cut line 1) | Organizer notes, secret issue, secret reveal tap | Send a secret body before its reveal tap |
-| public/index.html (planned T1) | Landing page with links | Contain event data |
-| public/css/app.css (planned T1) | All styles, including the fail banner | Set error text below 32px |
-| public/js/api.js (planned T1) | `api()` fetch wrapper and `showFail()` banner | Use innerHTML with server data |
+| public/index.html | Landing page with links | Contain event data |
+| public/css/app.css | All styles, including the fail banner | Set error text below 32px |
+| public/js/api.js | `api()` fetch wrapper and `showFail()` banner | Use innerHTML with server data |
 | public/setup.html, public/js/setup.js (planned T3) | Organizer first credential enrollment | Work without the setup token |
 | public/console.html, public/js/console.js (planned T3) | Organizer console | Cache data in localStorage |
 | public/team.html, public/js/team.js (planned T5) | Team picker and tap in | Show anything about a prompt |

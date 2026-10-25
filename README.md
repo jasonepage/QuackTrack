@@ -68,6 +68,52 @@ Organizer setup: http://localhost:3000/setup?token=<token>
 
 Open it on the host laptop and enroll the organizer credential, usually a passkey with Touch ID, so both physical keys stay free for teams. The link works once. After that, the organizer logs in on the console with a tap. Anyone who can read the server terminal can read the link, so keep the terminal on the host laptop. A restart wipes the event and prints a new link.
 
+## The 60 second demo
+
+Before the clock starts:
+
+1. Run `npm start` on the stage laptop and open http://localhost:3000/console in Chrome. Log in with the organizer passkey.
+2. If an earlier run is still in memory, type `RESET` in the Event box and click Reset event. Write down the key list first.
+3. Click Load demo data. It makes two prompts, Team Mallard (Pool 01, yellow tag) and Team Teal (Pool 02, blue tag), and the demo event information. The rosters start empty: a person joins a team only by tapping that team's key.
+4. In a second window open http://localhost:3000/team, pick Team Mallard, choose "I'm new to this team", and type `jasonepage` and a display name. Do not click Join yet.
+5. Keep the project name, repo link (owned by `jasonepage`), full commit SHA from `git rev-parse HEAD`, and description ready to paste.
+
+On the clock (SRS.md section 8):
+
+| Time | Do this | You should see |
+|---|---|---|
+| 0:00 | Show the console. | "0 of 2 submitted", a green "Log verified" badge, two grey DRAFT rows saying "Not enrolled". |
+| 0:05 | Enroll with key on Mallard, tap key A (yellow). | Mallard: ENROLLED, Security key, Pool 01 (yellow). |
+| 0:12 | Enroll with key on Teal, tap key B (blue). | Teal: ENROLLED, Security key, Pool 02 (blue). |
+| 0:18 | Assign Duck Pond Sensors to Mallard and Quack Commons to Teal. | Both rows show their track and a red "Not revealed". |
+| 0:24 | In the team window click Join and tap key, tap key B. | Red banner: "That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed." |
+| 0:31 | Click Join and tap key again, tap key A. | The room shows Duck Pond Sensors. Mallard turns green "Revealed", with jasonepage as Captain. |
+| 0:37 | Paste the four fields, tick the declaration, click Sign submission. | "You are signing hash ........ Tap your key." in large type. |
+| 0:48 | Tap key A. | "Signed. Receipt ........" and an Open receipt link. |
+| 0:52 | Point at the console. | "1 of 2 submitted", Mallard green SUBMITTED with the same hash and "Owner on roster", Teal red "Not submitted", "Log verified". |
+
+## Key pool sheet
+
+The server forgets everything when it stops, so this sheet is the record of which key went where. Print it and fill it in at the desk.
+
+Tag rule: attach a bright tag to each key. Write only the team name and "Return to the organizer desk" on the tag. Never write a credential ID or PIN on it.
+
+| Pool label | Tag color | Team | Checked out | Returned | Reset done |
+|---|---|---|---|---|---|
+| Pool 01 | yellow | | | | |
+| Pool 02 | blue | | | | |
+| Pool 03 | | | | | |
+| Pool 04 | | | | | |
+| Pool 05 | | | | | |
+| Pool 06 | | | | | |
+
+After the event, reset every returned key with its maker's tool before the next event. For a YubiKey: `ykman fido reset`. This clears any PIN a team set and any passkeys they saved for other sites. QuackTrack does not store its own credentials on the key, and the console does not track returns in this version. An unreturned key never blocks a submission.
+
+## Testing notes
+
+- `QT_TEST.tamperSign('changed')` (SRS.md INV-14) reads the values in the sign form, so fill the form first. Browsers only open a key prompt for a page that has focus, so run it from the developer console with a delay and then click a blank part of the page: `setTimeout(() => QT_TEST.tamperSign('changed'), 3000)`. Without the delay the browser refuses at once, with no prompt, and the room shows "The submission was not signed. Nothing was submitted."
+- After a team has submitted, the room shows the receipt link instead of the form. To check "already submitted" (INV-10), send the same request the Sign button sends from that team's room console: `api('/api/sign/options', { body: { teamId: '<team ID from the console log>', projectName: 'x', repoUrl: 'https://github.com/owner/repo', commitSha: 'a'.repeat(40), description: 'x', declared: true } })`.
+
 ## Not built in this version
 
 - Organizer notes and team secrets (SRS.md FR-17 to FR-19, INV-07) were cut by cut line 1 and are not built.

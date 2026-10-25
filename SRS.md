@@ -327,7 +327,7 @@ Changed in Session 3: the organizer no longer types rosters. Members join themse
 ### FR-36 Demo data seed
 - Actor: Organizer.
 - Preconditions: organizer session, no teams exist.
-- Happy path: creates prompt "Duck Pond Sensors" and prompt "Quack Commons", each with instructions and a deadline 2 hours from now. Creates DRAFT team "Team Mallard" (key mode, key source Pool key, tag `yellow`, pool label `Pool 01`) with `jasonepage` Captain and `quack-builder-demo` Builder, and DRAFT team "Team Teal" (key mode, Pool key, `blue`, `Pool 02`) with `teal-captain-demo` Captain. The console row prefills its key fields from these values, so Enroll stays one click. Saves a demo bundle with schedule, rules, judging criteria, and FAQ sections. Logs `demo.seeded`.
+- Happy path: creates prompt "Duck Pond Sensors" (instructions contain `PINEAPPLE42`) and prompt "Quack Commons" (instructions contain `KIWI19`), each with a deadline 2 hours from now. Creates DRAFT team "Team Mallard" (key mode, key source Pool key, tag `yellow`, pool label `Pool 01`) and DRAFT team "Team Teal" (key mode, Pool key, `blue`, `Pool 02`). Changed with T7: both rosters start empty, because a person joins a roster only with a verified tap of that team's key (INV-12, L1); on stage the presenter joins Team Mallard as `jasonepage` with key A, and that tap also reveals the prompt. The console row prefills its key fields from these values, so Enroll stays one click. Saves a demo bundle with schedule, rules, judging criteria, and FAQ sections. Logs `prompt.created`, `team.created`, and `bundle.updated` for what it creates, then `demo.seeded`.
 - Failure: teams already exist: 409 `Demo data needs an empty event. Reset first.`
 
 ### FR-37 Origin guard
@@ -619,14 +619,14 @@ A REVOKED credential stays stored so its ID stays unique and excluded. It never 
 
 ## 8. Acceptance criteria (the 60 second demo)
 
-Setup: server on the stage laptop at http://localhost:3000, organizer logged in, demo data loaded, console and /team in two windows of Chrome, keys A and B ready.
+Setup: server on the stage laptop at http://localhost:3000, organizer logged in, demo data loaded, console and /team in two windows of Chrome, keys A and B ready. In the /team window, Team Mallard is picked, `I'm new to this team` is chosen, and `jasonepage` and a display name are typed but not yet submitted (changed with T7: the seed rosters are empty, FR-36).
 
-1. Console shows Team Mallard and Team Teal as DRAFT with rosters. Pass if both rows say "Not enrolled" and the top strip shows `Log verified`.
+1. Console shows Team Mallard and Team Teal as DRAFT with empty rosters (FR-36). Pass if both rows say "Not enrolled" and the top strip shows `Log verified`.
 2. Enroll Mallard with key A. Pass if the row says ENROLLED and `Security key` within 2 seconds.
 3. Enroll Teal with key B. Pass if the row says ENROLLED and `Security key`.
 4. Assign "Duck Pond Sensors" to Mallard and "Quack Commons" to Teal. Pass if both rows show their track and red `Not revealed`.
-5. On /team pick Mallard and tap key B. Pass if the banner says `That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed.` and the console log tail shows `tap.client_failed`.
-6. Tap key A. Pass if the room shows the Duck Pond Sensors instructions and the Mallard row shows a green revealed time while Teal stays red.
+5. On /team click `Join and tap key` and tap key B. Pass if the banner says `That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed.` and the console log tail shows `tap.client_failed`.
+6. Click `Join and tap key` again and tap key A. Pass if the room shows the Duck Pond Sensors instructions, the Mallard row lists `jasonepage` as Captain, and it shows a green revealed time while Teal stays red.
 7. Fill project name, repo link, commit SHA, and description, tick the build declaration, and sign with key A. Pass if the locked panel showed the short hash before the tap and the room shows `Signed. Receipt <short hash>.` and a receipt link after it.
 8. Look at the console. Pass if Mallard is green `SUBMITTED` with the same short hash, Teal is red `Not submitted`, and the top strip shows `Log verified`.
 9. The whole sequence takes 60 seconds or less.

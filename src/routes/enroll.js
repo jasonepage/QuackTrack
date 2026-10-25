@@ -71,11 +71,45 @@ function teamRow(team) {
     shortHash: sub ? sub.contentHash.slice(0, 8) : null,
     commitShort: sub ? sub.commitSha.slice(0, 7) : null,
     ownerCheck: sub ? sub.ownerCheck : null,
+    // FR-31: red "Missed deadline" once the team's deadline passes unsigned.
+    missedDeadline: !sub && Boolean(prompt) && Date.now() >= Date.parse(prompt.deadline),
   };
 }
 
 function teamRows() {
   return [...store.teams.values()].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1)).map(teamRow);
+}
+
+// FR-03: build a DRAFT team with an empty OPEN roster, log team.created,
+// then store it. The demo seed (FR-36) passes the key fields to prefill.
+// The caller has already checked the name and the 40 team limit.
+function createDraftTeam(name, mode, keyFields = null) {
+  const team = {
+    id: newTeamId(),
+    name,
+    nameKey: name.toLowerCase(),
+    mode,
+    state: 'DRAFT',
+    rosterState: 'OPEN',
+    roster: [],
+    rosterHash: null,
+    credentialId: null,
+    assignedPromptId: null,
+    revealedAt: null,
+    submissionId: null,
+    muted: false,
+    keySource: keyFields ? keyFields.keySource : mode === 'key' ? 'pool' : 'own-passkey',
+    tagColor: keyFields ? keyFields.tagColor : null,
+    tagLabel: keyFields ? keyFields.tagLabel : null,
+    overrideCount: 0,
+    lastOverride: null,
+    warned10: false,
+    createdAt: new Date().toISOString(),
+    enrolledAt: null,
+  };
+  log.append(ORG_ACTOR, 'team.created', { teamId: team.id, teamName: team.name, mode: team.mode });
+  store.teams.set(team.id, team);
+  return team;
 }
 
 // ---------- FR-03 Create and delete a draft team ----------
@@ -93,32 +127,7 @@ router.post(
       if (t.nameKey === nameKey) return failWith(res, 'TEAM_NAME_TAKEN', { team: t.name });
     }
     if (store.teams.size >= MAX_TEAMS) return failWith(res, 'TEAM_LIMIT');
-    const now = new Date().toISOString();
-    const team = {
-      id: newTeamId(),
-      name,
-      nameKey,
-      mode: req.body.mode,
-      state: 'DRAFT',
-      rosterState: 'OPEN',
-      roster: [],
-      rosterHash: null,
-      credentialId: null,
-      assignedPromptId: null,
-      revealedAt: null,
-      submissionId: null,
-      muted: false,
-      keySource: req.body.mode === 'key' ? 'pool' : 'own-passkey',
-      tagColor: null,
-      tagLabel: null,
-      overrideCount: 0,
-      lastOverride: null,
-      warned10: false,
-      createdAt: now,
-      enrolledAt: null,
-    };
-    log.append(ORG_ACTOR, 'team.created', { teamId: team.id, teamName: team.name, mode: team.mode });
-    store.teams.set(team.id, team);
+    const team = createDraftTeam(name, req.body.mode);
     res.json({ ok: true, team: teamRow(team) });
   }
 );
@@ -263,4 +272,4 @@ router.post(
   }
 );
 
-module.exports = { router, teamRow, teamRows, getTeam, keySourceText, currentRosterHash, ROLES, MAX_MEMBERS };
+module.exports = { router, teamRow, teamRows, getTeam, keySourceText, currentRosterHash, createDraftTeam, ROLES, MAX_MEMBERS };

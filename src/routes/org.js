@@ -7,15 +7,15 @@ const crypto = require('crypto');
 const express = require('express');
 
 const config = require('../config');
-const { store } = require('../store');
-const { failWith } = require('../errors');
+const { store, resetStore } = require('../store');
+const { failWith, notice } = require('../errors');
 const { body, query, setupLimit, orgCeremonyLimit } = require('../validate');
 const canon = require('../canon');
 const { b64u } = canon;
 const log = require('../log');
 const sessions = require('../sessions');
 const wa = require('../webauthn');
-const { teamRows, getTeam } = require('./enroll');
+const { teamRows, getTeam, createDraftTeam } = require('./enroll');
 
 const router = express.Router();
 const ORG_ACTOR = Object.freeze({ kind: 'organizer', id: 'organizer' });
@@ -143,6 +143,21 @@ router.post('/login/verify', body(CEREMONY_VERIFY), async (req, res) => {
   res.json({ ok: true });
 });
 
+// FR-07: log prompt.created (ID and deadline only, L2), then store it.
+function createPrompt(track, instructions, deadline) {
+  const prompt = {
+    id: 'pr_' + crypto.randomBytes(8).toString('hex'),
+    track,
+    instructions,
+    deadline,
+    warned30: false,
+    createdAt: new Date().toISOString(),
+  };
+  log.append(ORG_ACTOR, 'prompt.created', { promptId: prompt.id, deadline: prompt.deadline });
+  store.prompts.set(prompt.id, prompt);
+  return prompt;
+}
+
 // ---------- FR-07 Create prompt assignment ----------
 // Track and instructions are sealed (L2): they leave the server only in an
 // organizer response or in that team's own reveal and room after its tap.
@@ -163,16 +178,7 @@ router.post(
     const when = Date.parse(req.body.deadline);
     if (!Number.isFinite(when)) return failWith(res, 'BAD_TYPE', { label: 'Deadline' });
     if (when <= Date.now()) return failWith(res, 'DEADLINE_PAST');
-    const prompt = {
-      id: 'pr_' + crypto.randomBytes(8).toString('hex'),
-      track,
-      instructions,
-      deadline: new Date(when).toISOString(),
-      warned30: false,
-      createdAt: new Date().toISOString(),
-    };
-    log.append(ORG_ACTOR, 'prompt.created', { promptId: prompt.id, deadline: prompt.deadline });
-    store.prompts.set(prompt.id, prompt);
+    const prompt = createPrompt(track, instructions, new Date(when).toISOString());
     res.json({ ok: true, prompt: { id: prompt.id, track: prompt.track, deadline: prompt.deadline } });
   }
 );
@@ -204,18 +210,88 @@ router.post('/logout', sessions.requireOrg, body({}), (req, res) => {
   res.json({ ok: true });
 });
 
-// FR-31: team rows (T4), the log tail and chain status (T3). Later tickets add more.
+// FR-31 and FR-39: team rows, the at a glance counts, prompts, the log
+// tail, chain status, and the in-memory notice. Polled every second.
 router.get('/console', sessions.requireOrg, query({}), (req, res) => {
   const chain = log.chainStatus();
+  const teams = teamRows();
   res.json({
     ok: true,
-    teams: teamRows(),
+    teams,
+    glance: {
+      teams: teams.length,
+      enrolled: teams.filter((t) => t.state !== 'DRAFT').length,
+      revealed: teams.filter((t) => t.state === 'REVEALED' || t.state === 'SUBMITTED').length,
+      submitted: teams.filter((t) => t.state === 'SUBMITTED').length,
+    },
+    notice: notice('N03'),
     prompts: [...store.prompts.values()]
       .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
       .map((p) => ({ id: p.id, track: p.track, deadline: p.deadline })),
     log: store.log.slice(-20),
     chain: { ok: chain.ok, head: chain.head, brokenAt: chain.brokenAt, count: chain.count },
   });
+});
+
+// ---------- FR-35 Reset event ----------
+// Wipes everything except the organizer credential and this organizer
+// session. The new chain starts with event.reset carrying the old head (L5).
+router.post('/reset', sessions.requireOrg, body({ confirm: { type: 'string', label: 'Confirm text', required: false } }), (req, res) => {
+  if (req.body.confirm !== 'RESET') return failWith(res, 'RESET_CONFIRM');
+  const previousHead = log.head();
+  resetStore({ keepOrganizer: true, keepSid: req.session.sid });
+  log.append(ORG_ACTOR, 'event.reset', { previousHead });
+  res.json({ ok: true });
+});
+
+// ---------- FR-36 Demo data seed ----------
+// Two prompts, two DRAFT teams with their key fields prefilled, and the
+// demo event information. Rosters stay empty: since Session 3 a person joins
+// a roster only by tapping that team's key (INV-12, L1). On stage the
+// presenter joins Team Mallard as jasonepage with key A.
+const DEMO_BUNDLE = [
+  '# Schedule',
+  'Check-in and key handout start at 9:00 AM at the organizer desk.',
+  'Hacking starts at 10:00 AM when teams reveal their prompts.',
+  'Submissions close at the deadline shown in your team room.',
+  'Judging starts at 5:00 PM in the main hall.',
+  '',
+  '# Rules',
+  'Every project must be built during this event.',
+  'Each team submits once by signing with its security key. Submissions cannot be changed.',
+  'Return your pool key to the organizer desk when you leave.',
+  '',
+  '# Judging criteria',
+  'Judges score each project on idea, technical depth, design, and the demo.',
+  'Each team gets 3 minutes to demo and 2 minutes for questions.',
+  '',
+  '# FAQ',
+  'Lost your key? Go to the organizer desk. The organizer can replace it with a logged override.',
+  'Wi-Fi: the network name and password are posted at the organizer desk.',
+  'Food: lunch is at 12:30 PM and dinner is at 6:00 PM.',
+].join('\n');
+
+router.post('/seed', sessions.requireOrg, body({}), (req, res) => {
+  if (store.teams.size > 0) return failWith(res, 'SEED_NOT_EMPTY');
+  const deadline = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+  createPrompt(
+    'Duck Pond Sensors',
+    'Build a sensor that reports the duck pond water level and temperature to a live page. Your check phrase is PINEAPPLE42.',
+    deadline
+  );
+  createPrompt(
+    'Quack Commons',
+    'Build a shared board where visitors leave notes for each other near the pond. Your check phrase is KIWI19.',
+    deadline
+  );
+  createDraftTeam('Team Mallard', 'key', { keySource: 'pool', tagColor: 'yellow', tagLabel: 'Pool 01' });
+  createDraftTeam('Team Teal', 'key', { keySource: 'pool', tagColor: 'blue', tagLabel: 'Pool 02' });
+  const bundleHash = canon.sha256hex(canon.utf8(DEMO_BUNDLE));
+  log.append(ORG_ACTOR, 'bundle.updated', { bundleHash });
+  store.event.bundle = DEMO_BUNDLE;
+  store.event.bundleHash = bundleHash;
+  log.append(ORG_ACTOR, 'demo.seeded', {});
+  res.json({ ok: true });
 });
 
 // FR-34: the full log as a file.

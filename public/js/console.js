@@ -1,7 +1,9 @@
-// public/js/console.js: the organizer console. Sign in, team rows with
-// roster entry, key source, and the Enroll ceremony (T4), log tail and
-// chain status (T3). A pure view of server state: nothing is cached in
-// browser storage. All server text goes in with textContent.
+// public/js/console.js: the organizer console. Sign in, team rows with key
+// source and the Enroll ceremony (T4), prompts (T5), submission columns
+// (T6), and the live view (T7): one second polling, the at a glance strip
+// (FR-39), log entries as plain sentences (D16), Reset, and Load demo data.
+// A pure view of server state: nothing is cached in browser storage. All
+// server text goes in with textContent.
 import { startAuthentication, startRegistration } from '/vendor/swa/index.js';
 
 const $ = (id) => document.getElementById(id);
@@ -300,6 +302,9 @@ function teamCard(team) {
   card.append(head);
 
   if (team.state === 'DRAFT') {
+    const draftFacts = el('dl', undefined, 'facts');
+    draftFacts.append(el('dt', 'Credential'), el('dd', 'Not enrolled'));
+    card.append(draftFacts);
     if (team.roster.length) card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
     card.append(keySourceBlock(team));
     const actions = el('div', undefined, 'team-actions');
@@ -343,6 +348,9 @@ function teamCard(team) {
         ? el('span', 'Submitted ' + new Date(team.submittedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), 'chip chip-green')
         : el('span', 'Not submitted', 'chip chip-red')
     );
+    if (!team.submittedAt && team.missedDeadline) {
+      submitted.replaceChildren(el('span', 'Missed deadline', 'chip chip-red'));
+    }
     facts.append(el('dt', 'Submitted'), submitted);
     if (team.submittedAt) {
       facts.append(el('dt', 'Hash'), el('dd', team.shortHash, 'hash-cell'));
@@ -368,15 +376,23 @@ function render(data) {
   $('main').hidden = false;
   $('logout').hidden = false;
 
-  const chain = $('chain');
+  // FR-39: submitted count and the log badge, or the broken chain at full size.
+  const glance = $('glance');
   if (data.chain.ok) {
-    chain.textContent = 'Chain OK';
-    chain.className = 'chain-strip chain-ok';
+    glance.className = 'glance-strip';
+    $('glance-count').textContent = `${data.glance.submitted} of ${data.glance.teams} submitted`;
+    $('chain-badge').textContent = 'Log verified';
+    $('chain-badge').hidden = false;
   } else {
-    chain.textContent = `Chain BROKEN at entry ${data.chain.brokenAt}.`;
-    chain.className = 'chain-strip chain-broken';
+    glance.className = 'glance-strip glance-broken';
+    $('glance-count').textContent = `Chain BROKEN at entry ${data.chain.brokenAt}.`;
+    $('chain-badge').textContent = '';
+    $('chain-badge').hidden = true;
   }
-  $('chain-head').textContent = data.chain.head || 'none';
+  const head = data.chain.head || '';
+  $('chain-head-short').textContent = head ? `${head.slice(0, 4)}...${head.slice(-4)}` : 'none';
+  $('chain-head').textContent = head;
+  $('memory-notice').textContent = data.notice;
 
   renderPrompts(data);
 
@@ -385,27 +401,129 @@ function render(data) {
 
   const body = $('log-rows');
   body.replaceChildren();
+  const names = teamNames(data);
+  const tracks = new Map(data.prompts.map((p) => [p.id, p.track]));
   for (const entry of [...data.log].reverse()) {
     const row = document.createElement('tr');
-    row.append(
-      el('td', entry.seq),
-      el('td', new Date(entry.ts).toLocaleTimeString()),
-      el('td', entry.actor.kind),
-      el('td', entry.action, 'log-action'),
-      el('td', Object.keys(entry.data).length ? JSON.stringify(entry.data) : '', 'log-data')
-    );
+    const details = el('details', undefined, 'log-entry');
+    details.open = openEntries.has(entry.entryHash);
+    details.addEventListener('toggle', () => {
+      if (details.open) openEntries.add(entry.entryHash);
+      else openEntries.delete(entry.entryHash);
+    });
+    details.append(el('summary', logSentence(entry, names, tracks)), el('pre', JSON.stringify(entry, null, 2), 'log-data'));
+    row.append(el('td', entry.seq), el('td', new Date(entry.ts).toLocaleTimeString()), el('td', undefined));
+    row.lastChild.append(details);
     body.append(row);
   }
 }
 
-async function load() {
-  try {
-    render(await api('/api/org/console', { silent: true }));
-  } catch (err) {
-    showFail(err.message);
-    if (err.status === 401) showLogin();
+// ---------- D16: log entries as plain sentences ----------
+const openEntries = new Set(); // raw entries the organizer opened, kept across polls
+
+function teamNames(data) {
+  const names = new Map(data.teams.map((t) => [t.id, t.name]));
+  for (const e of data.log) if (e.data.teamId && e.data.teamName && !names.has(e.data.teamId)) names.set(e.data.teamId, e.data.teamName);
+  return names;
+}
+
+function keyText(d) {
+  if (d.keySource === 'pool') return `${d.tagLabel} (${d.tagColor})`;
+  if (d.keySource === 'own-key') return 'its own key';
+  if (d.keySource === 'own-passkey') return 'its own passkey';
+  return 'a key';
+}
+
+const TAP_REASON = { wrong_credential: 'wrong key', revoked: 'replaced key', verify_failed: 'did not verify', content_changed: 'the content changed' };
+const TAP_KIND = { tap: 'team', enroll: 'enroll', sign: 'sign', 'org-login': 'organizer login', 'org-setup': 'organizer setup', override: 'override', 'override-auth': 'override' };
+
+function logSentence(entry, names, tracks) {
+  const d = entry.data;
+  const team = names.get(d.teamId) || d.teamName || 'A team';
+  const track = tracks.get(d.promptId) || 'A prompt';
+  const short = d.contentHash ? d.contentHash.slice(0, 8) : '';
+  switch (entry.action) {
+    case 'event.created': return 'The server started a new event.';
+    case 'event.reset': return 'The organizer reset the event.';
+    case 'org.enrolled': return `The organizer enrolled with an ${d.label}.`;
+    case 'org.login': return 'The organizer logged in.';
+    case 'team.created': return `${team} was created.`;
+    case 'team.deleted': return `${team} was deleted.`;
+    case 'roster.added': return `${d.handle} was added to ${team} as ${d.role}.`;
+    case 'roster.removed': return `${d.handle} was removed from ${team}.`;
+    case 'roster.joined': return `${d.handle} joined ${team} as ${d.role}.`;
+    case 'team.enrolled': return `${team} enrolled with ${keyText(d)}.`;
+    case 'prompt.created': return `The prompt ${track} was created.`;
+    case 'prompt.assigned': return `${track} was assigned to ${team}.`;
+    case 'prompt.revealed': return `${team} revealed its prompt.`;
+    case 'tap.ok': return d.purpose === 'join' ? `${team} tapped its key to add a member.` : `${team} tapped in with its key.`;
+    case 'tap.failed': return `A tap for ${team} was refused: ${TAP_REASON[d.reason] || d.reason}.`;
+    case 'tap.client_failed':
+      return `The browser stopped a ${TAP_KIND[d.kind] || d.kind} tap for ${d.teamId ? team : 'the organizer'} (${d.errorName}).`;
+    case 'tap.counter_regression':
+      return `${d.teamId ? team + "'s key" : "The organizer's key"} counter went backwards, which can mean a cloned key.`;
+    case 'instructions.downloaded': return `${d.handle || 'Someone'} on ${team} downloaded the instructions.`;
+    case 'bundle.updated': return 'The event information was updated.';
+    case 'sign.started': return `${team} started signing hash ${short}.`;
+    case 'sign.failed': return `${team}'s signing tap failed: ${TAP_REASON[d.reason] || d.reason}.`;
+    case 'submission.signed': return `${team} signed its submission. Hash ${short}.`;
+    case 'demo.seeded': return 'Demo data was loaded.';
+    default: return entry.action;
   }
 }
+
+// ---------- Polling (FR-31: every second) ----------
+let timer = null;
+let lastJson = '';
+let loading = false;
+
+async function load() {
+  if (loading) return;
+  loading = true;
+  try {
+    const data = await api('/api/org/console', { silent: true });
+    const json = JSON.stringify(data);
+    if (json !== lastJson) {
+      lastJson = json;
+      render(data);
+    }
+    if (!timer) timer = setInterval(load, 1000);
+  } catch (err) {
+    lastJson = '';
+    if (timer) clearInterval(timer);
+    timer = null;
+    showFail(err.message);
+    if (err.status === 401) showLogin();
+  } finally {
+    loading = false;
+  }
+}
+
+// ---------- FR-36 Load demo data, FR-35 Reset ----------
+$('seed').addEventListener('click', async () => {
+  try {
+    await api('/api/org/seed', { body: {} });
+  } catch (_) {
+    return;
+  }
+  clearBanners();
+  window.scrollTo(0, 0); // the demo starts from the strip and the team rows
+  load();
+});
+
+$('reset-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/org/reset', { body: { confirm: $('reset-confirm').value } });
+  } catch (_) {
+    return;
+  }
+  $('reset-confirm').value = '';
+  keyDraft.clear();
+  openEntries.clear();
+  clearBanners();
+  load();
+});
 
 $('new-team').addEventListener('submit', async (e) => {
   e.preventDefault();

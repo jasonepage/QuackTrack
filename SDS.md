@@ -695,7 +695,7 @@ Done when:
 5. For Teal enter a 7 character commit: `The commit must be the full 40 character ID from git rev-parse HEAD.` Untick the declaration: `Tick the build declaration before you sign.`
 
 ### T7 Live console, reset, demo seed, rehearsal (35 min). Depends on: T6.
-Build: one second polling, red and green states with text labels, the at a glance strip with the `Log verified` badge and `Missed deadline` (FR-39, FR-31), log entries as plain sentences with expand controls and the head hash shortened with an expand control (D16), Download log button, Reset with `RESET` confirm and the key list warning, Load demo data (FR-36 content including the seeded key fields; Duck Pond Sensors instructions contain `PINEAPPLE42`, Quack Commons instructions contain `KIWI19`), the in-memory notice line, README demo section and key pool sheet (NFR-14).
+Build: one second polling, red and green states with text labels, the at a glance strip with the `Log verified` badge and `Missed deadline` (FR-39, FR-31), log entries as plain sentences with expand controls and the head hash shortened with an expand control (D16), Download log button, Reset with `RESET` confirm and the key list warning, Load demo data (FR-36 content including the seeded key fields and empty rosters; Duck Pond Sensors instructions contain `PINEAPPLE42`, Quack Commons instructions contain `KIWI19`), the in-memory notice line, README demo section and key pool sheet (NFR-14).
 Done when:
 1. Reset, Load demo data.
 2. Run SRS.md section 8 with keys A and B. Every pass condition holds and the run takes 60 seconds or less.

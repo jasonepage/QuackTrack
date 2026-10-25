@@ -337,22 +337,79 @@ a:focus-visible {
   padding-top: 1.5rem;
   padding-bottom: 2rem;
 }
-/* Chain status: color plus words (NFR-17). */
-.chain-strip {
+/* FR-39 at a glance strip: submitted count at least 40px, the log badge at
+   least 24px, and a broken chain in red at the full strip size. Color is
+   never the only signal (NFR-17): every state has words. */
+.glance-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
   padding: 1rem 1.25rem;
+  border: 3px solid var(--ink);
   border-radius: 0.75rem;
-  color: #fff;
-  font-size: 2.5rem;
-  font-weight: 800;
-  line-height: 1.15;
 }
-.chain-ok { background: var(--green); }
-.chain-broken { background: var(--red); }
+.glance-count {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.chain-badge {
+  padding: 0.35rem 0.9rem;
+  border-radius: 0.5rem;
+  background: var(--green);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+}
+.glance-broken {
+  border-color: var(--red);
+  background: var(--red);
+  color: #fff;
+}
 .chain-head {
   margin: 0.5rem 0 0;
   overflow-wrap: anywhere;
 }
+.chain-head summary { cursor: pointer; font-weight: 700; }
 .chain-head code { font-size: 1rem; }
+#memory-notice { margin-top: 0.75rem; }
+
+/* D16: log lines read as sentences; the raw entry opens below. */
+.log-entry summary { cursor: pointer; font-weight: 600; }
+.log-entry pre {
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+}
+.event-actions {
+  display: grid;
+  gap: 1rem;
+  max-width: 46rem;
+  margin: 0.75rem 0 2rem;
+}
+.event-actions > .small-button { justify-self: start; }
+.reset-form {
+  padding: 1rem;
+  border: 3px solid var(--red);
+  border-radius: 0.75rem;
+}
+.reset-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.reset-form input {
+  max-width: 16rem;
+  padding: 0.5rem 0.625rem;
+  border: 2px solid var(--ink);
+  border-radius: 0.375rem;
+  font: inherit;
+  font-size: 1.125rem;
+}
+a.small-button { display: inline-block; text-decoration: none; }
 .console-bar {
   display: flex;
   flex-wrap: wrap;

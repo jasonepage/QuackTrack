@@ -24,8 +24,16 @@
     </section>
 
     <section id="main" hidden>
-      <div id="chain" class="chain-strip" role="status"></div>
-      <p class="chain-head">Head <code id="chain-head"></code></p>
+      <!-- FR-39: how many submitted, and whether the log verifies, from across the room. -->
+      <div id="glance" class="glance-strip" role="status">
+        <span id="glance-count" class="glance-count"></span>
+        <span id="chain-badge" class="chain-badge"></span>
+      </div>
+      <details class="chain-head">
+        <summary>Log head <code id="chain-head-short"></code></summary>
+        <code id="chain-head"></code>
+      </details>
+      <p id="memory-notice" class="notice-box"></p>
 
       <div class="console-bar">
         <h2>Teams</h2>
@@ -55,14 +63,26 @@
 
       <div class="console-bar">
         <h2>Action log</h2>
-        <a class="text-link" href="/api/org/log.json" download="quacktrack-log.json">Download log</a>
+        <a class="small-button" href="/api/org/log.json" download="quacktrack-log.json">Download log</a>
       </div>
-      <p class="muted">The last 20 entries, newest first.</p>
+      <p class="muted">The last 20 entries, newest first. Open a line to see the raw entry.</p>
       <div class="table-scroll">
         <table class="log-table">
-          <thead><tr><th>#</th><th>Time</th><th>Actor</th><th>Action</th><th>Details</th></tr></thead>
+          <thead><tr><th>#</th><th>Time</th><th>What happened</th></tr></thead>
           <tbody id="log-rows"></tbody>
         </table>
+      </div>
+
+      <div class="console-bar">
+        <h2>Event</h2>
+      </div>
+      <div class="event-actions">
+        <button id="seed" class="small-button" type="button">Load demo data</button>
+        <form id="reset-form" class="reset-form" autocomplete="off">
+          <p class="tag-rule">Reset also wipes which team holds which key. Write down the key list first.</p>
+          <label>Type RESET to confirm <input id="reset-confirm" spellcheck="false" autocapitalize="characters"></label>
+          <button class="small-button" type="submit">Reset event</button>
+        </form>
       </div>
     </section>
   </main>

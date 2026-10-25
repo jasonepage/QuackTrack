@@ -81,22 +81,22 @@ Only the team's own session can open it. It shows:
 
 ## 7. The 60 second demo
 
-Setup before the clock starts: server running on the stage laptop at http://localhost:3000. Organizer logged in on the console window. "Load demo data" clicked, which created two prompts (tracks "Duck Pond Sensors" and "Quack Commons"), the FAQ bundle, and two draft teams with rosters: Team Mallard (2 members, Pool 01, yellow tag) and Team Teal (1 member, Pool 02, blue tag), both in Security key mode with their key fields prefilled. Key A has a yellow tag, key B a blue tag. A team window on /team sits beside the console. Project name, repo link, commit SHA, and description are in the clipboard notes.
+Setup before the clock starts: server running on the stage laptop at http://localhost:3000. Organizer logged in on the console window. "Load demo data" clicked, which created two prompts (tracks "Duck Pond Sensors" and "Quack Commons"), the FAQ bundle, and two draft teams with empty rosters: Team Mallard (Pool 01, yellow tag) and Team Teal (Pool 02, blue tag), both in Security key mode with their key fields prefilled. Key A has a yellow tag, key B a blue tag. A team window on /team sits beside the console with Team Mallard picked, "I'm new to this team" chosen, and `jasonepage` and a display name typed but not submitted. Changed with T7: the seed rosters are empty because a person joins a roster only with the team's key tap (SRS.md INV-12), so the presenter joins on stage. Project name, repo link, commit SHA, and description are in the clipboard notes.
 
 | Time | Action | Expected screen state |
 |---|---|---|
-| 0:00 | Show the console. | Top strip "0 of 2 submitted" and a green "Log verified" badge. Two grey rows: Mallard and Teal, DRAFT, rosters listed, "Not enrolled", key fields "Pool 01 (yellow)" and "Pool 02 (blue)". |
-| 0:05 | Click Enroll with key on Mallard, tap key A. | Mallard row: ENROLLED, "Security key", "Pool 01 (yellow)", fingerprint, roster locked. Log tail shows `team.enrolled`. |
+| 0:00 | Show the console. | Top strip "0 of 2 submitted" and a green "Log verified" badge. Two grey rows: Mallard and Teal, DRAFT, no members yet, "Not enrolled", key fields "Pool 01 (yellow)" and "Pool 02 (blue)". |
+| 0:05 | Click Enroll with key on Mallard, tap key A. | Mallard row: ENROLLED, "Security key", "Pool 01 (yellow)", fingerprint. Log tail shows `team.enrolled`. |
 | 0:12 | Click Enroll with key on Teal, tap key B. | Teal row: ENROLLED, "Security key", "Pool 02 (blue)". |
 | 0:18 | Assign "Duck Pond Sensors" to Mallard and "Quack Commons" to Teal. | Both rows show the assigned track and a red "Not revealed". |
-| 0:24 | In the team window pick Mallard, tap key B. | The browser shows its own "not registered" message. After it closes, a full width red banner: "That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed." Console log tail shows `tap.client_failed` for Mallard. |
-| 0:31 | Tap again with key A. | The room opens with the Duck Pond Sensors instructions. Mallard row: "Revealed 0:31" in green. Teal still red. |
+| 0:24 | In the team window click "Join and tap key", tap key B. | The browser shows its own "not registered" message. After it closes, a full width red banner: "That was not Team Mallard's key, or the tap was cancelled. Nothing was revealed." Console log tail shows `tap.client_failed` for Mallard. |
+| 0:31 | Click "Join and tap key" again, tap key A. | The room opens with the Duck Pond Sensors instructions and jasonepage as Captain. Mallard row: jasonepage on the roster, "Revealed 0:31" in green. Teal still red. |
 | 0:37 | Paste project name, repo link, commit SHA, description. Tick the build declaration. Click Sign submission. | Locked panel: "You are signing hash 3fa2c9e1. Tap your key." in large type (hash differs per content) |
 | 0:48 | Tap key A. | Room shows "Signed. Receipt 3fa2c9e1." and a receipt link. |
 | 0:52 | Point at the console. | Top strip "1 of 2 submitted". Mallard row green: SUBMITTED, time, short hash matching the room, commit, repo owner check. Teal row red: not revealed, not submitted. Log verified. |
 | 0:58 | Done. | |
 
-Timing note: the commit field and the declaration box cost about 4 seconds, taken from the closing pause. The paste step is now the tightest part of the run, so rehearse it.
+Timing note: the commit field and the declaration box cost about 4 seconds, taken from the closing pause. The paste step is now the tightest part of the run, so rehearse it. The join form is filled in before the clock starts, so joining on stage costs no extra time.
 
 ## 8. Out of scope
 
@@ -149,7 +149,7 @@ Parked in Session 3:
 14. **What can a Judge/Observer do?** Default: watch the projected console and open receipt links. No login. Why: the material names the actor but gives no powers, and receipts are the proof judges need.
 15. **Session length?** Default: 8 hours absolute, no sliding. Why: covers the event day, and a stolen cookie can never reach ceremony tier anyway.
 16. **What does reset keep?** Default: reset wipes everything except the organizer credential and the organizer's current session. The new log starts with an entry recording the old chain's head hash. Why: the organizer can reset between rehearsals without re-enrolling.
-17. **Demo seed handles.** Default: Team Mallard's seed roster is `jasonepage` (Captain) and `quack-builder-demo` (Builder), Team Teal's is `teal-captain-demo` (Captain). The demo repo link must be owned by `jasonepage` so the owner check shows a match. Change the seed in src/routes/org.js if the presenter's handle differs. Why: a green owner check on stage.
+17. **Demo seed handles.** Default (changed with T7): the seed rosters are empty. On stage the presenter joins Team Mallard as `jasonepage` with key A, which also reveals the prompt; Team Teal's member joins the same way if needed (for example `teal-captain-demo`). The demo repo link must be owned by the presenter's handle so the owner check shows a match. Why: a seeded roster would put people on a team without a tap of its key, which breaks INV-12 (L1), and the join is a feature worth showing; the presenter types the handle before the clock starts.
 18. **When is "deadline approach" for the drama feed?** Default: 10 minutes before each deadline, one post per unsubmitted team. The countdown post is at 30 minutes. Why: two moments, both readable on stage.
 19. **How is "never invent event facts" checked?** Default: the model must return JSON (JavaScript Object Notation) with a verbatim quote from the bundle. The server accepts an answer only if the quote is found in the bundle. Otherwise it shows the refusal sentence and logs the question as unanswered. Why: a check the server can run, instead of trusting the model.
 20. **Which Gemini model?** Default: the constant `gemini-3.8-flash` in src/ai/gemini.js. Changed in Session 2: on October 25, 2026 Google's deprecations page said 2.5 models are limited to users who used them before and pointed new projects to 3.5 Flash-Lite or 3.8 Flash, and the pricing page listed a free tier for `gemini-3.8-flash`. If it fails, change that one constant to `gemini-3.5-flash-lite`. Why: the env var list is locked, so the model is a code constant.

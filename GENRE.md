@@ -77,10 +77,10 @@ Terms used here: a "ceremony" is one WebAuthn (Web Authentication) key tap that 
 **TASTE**
 - One store module, one log module, thin route files that validate, check state, write, log, respond.
 - State machines written as explicit allowed transition tables.
-- The host (organizer) sees everything. Players (teams) see only their own state plus the public commons.
+- The host (organizer) sees every team's state, but no screen shows team chat text. Players (teams) see only their own state plus The Quad (the public commons).
 
 **REJECTS**
-- Trusting `credentialType`, `authenticatorAttachment`, `teamId`, `handle`, or `role` because the client sent it.
+- Trusting `credentialType`, `teamId`, `handle`, or `role` because the client sent it. `authenticatorAttachment` is client sent too: it may only narrow a credential label, never grant one by itself (SDS.md section 6.4).
 - Hidden admin endpoints without organizer session checks.
 - WebSockets or extra infrastructure when one second polling works.
 
@@ -112,7 +112,7 @@ Terms used here: a "ceremony" is one WebAuthn (Web Authentication) key tap that 
 7. Keep error sentences short enough to read aloud on stage.
 
 **TASTE**
-- Three ceremonies that feel like magic: Enroll, Reveal, Sign.
+- Three ceremonies that feel like magic: Enroll, Reveal, Sign. Override is a rare fourth ceremony that should feel loud, not magic: the word OVERRIDE shows wherever it appears.
 - Big type, high contrast, one action per screen.
 - The console projected on a screen while the team page runs in a second window.
 

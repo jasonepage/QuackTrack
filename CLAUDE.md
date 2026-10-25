@@ -7,8 +7,10 @@ Read this file first in every session. You have no memory of earlier sessions. T
 1. QuackTrack is a hackathon submission system where one FIDO2 (Fast IDentity Online 2) security key is a team's identity.
 2. Organizers create prompt assignments and assign one to each enrolled team.
 3. A team sees its prompt only after a verified key tap, and the reveal time is logged.
-4. A team signs its submission with a key tap whose WebAuthn (Web Authentication) challenge is derived from the SHA-256 hash of the submission content.
+4. A team signs its submission with a key tap whose WebAuthn (Web Authentication) challenge is derived from the SHA-256 hash of the submission content: project name, repo URL, commit SHA, description, and the build declaration sentence.
 5. Organizers watch a live console with one row per team, backed by a hash chained action log.
+6. One codebase runs in two modes with no code change. Local mode: one laptop at http://localhost:3000, where every team taps in on that laptop. Hosted mode: Render at an HTTPS origin, where teams use their own devices. WebAuthn works only on localhost or a real HTTPS origin, so multi device use is hosted mode only.
+7. The organizer owns a reusable pool of keys and checks one out to each team at enrollment; a team may use its own key with organizer approval. A lost or broken key is replaced only through the logged OVERRIDE ceremony (SRS.md FR-41).
 
 ## The stack (verbatim)
 
@@ -23,14 +25,14 @@ Laws (never break, priority order as listed): L1 server authority, identity only
 ## How to work here
 
 1. Before every task, read GENRE.md, PRODUCT.md, SRS.md, and SDS.md in full. Do not rely on a summary of them.
-2. Do one build ticket per session. The tickets are T1 to T10 in SDS.md section 12, and the cut lines are in section 13. Do them in order. Do not start a ticket whose dependencies are not done.
+2. Do one build ticket per session. The tickets are in SDS.md section 12, and the cut lines are in section 13. Build in this order: T1 to T8, then T11, then T9. T10 is cut (cut line 1) and is not built. Do not start a ticket whose dependencies are not done.
 3. Build only what the ticket says. If the ticket needs something the SDS does not define, stop and say so.
 4. Before you say a ticket is done, run its "Done when" test yourself as far as you can without a physical key (start the server, call the endpoints with curl, read the log). Then hand the human the steps that need a physical key and wait for their result.
 5. Never add anything that breaks a law. If a request from the human conflicts with a law, say which law and why, and do not comply silently. Lower numbered laws win over higher numbered laws.
 6. When a ticket creates or changes a file, update the file map below in the same session.
 7. Never write a secret to any file on disk, including a git ignored .env file. When a command needs GEMINI_API_KEY or SESSION_SECRET, give the human one Terminal command with the value pasted inline, for example `AI_PROVIDER=gemini GEMINI_API_KEY=paste-key-here npm start`.
 8. Git: work on the main branch only. Make one commit per ticket that includes every changed file. The human pushes. Do not create branches.
-9. Every error a person can see is one plain sentence that says what happened and what to do next. No stack traces in any response or page.
+9. Every error a person can see is one plain sentence that says what happened and what to do next, copied from the error dictionary in SRS.md section 4A. Never invent a new sentence: if one is missing, stop and say so. No stack traces in any response or page.
 10. Every page is static HTML plus static JavaScript. The server never puts data into HTML. All data arrives through the JSON (JavaScript Object Notation) endpoints in SDS.md section 4.
 
 ## File map
@@ -50,7 +52,7 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | README.md (planned T1) | How to run local mode and hosted mode, env var table | Contain a real key or secret |
 | server.js (planned T1) | Create the Express app, guards, mount routes, start listening | Hold business logic |
 | src/config.js (planned T1) | Read env vars and apply defaults | Read any env var not in the stack list |
-| src/errors.js (planned T1) | `fail(res, status, code, sentence)` and the error envelope | Send a stack trace |
+| src/errors.js (planned T1) | `fail(res, status, code, sentence)`, the error envelope, and the SRS.md section 4A dictionary | Send a stack trace or a sentence that is not in the dictionary |
 | src/store.js (planned T1) | In-memory maps and `resetStore()` | Write to disk |
 | src/validate.js (planned T1) | Schema checks, unknown field rejection, handle and URL rules, rate limiter | Read the store |
 | src/canon.js (planned T2) | `norm`, `canon`, `sha256`, challenge and hash derivations | Use JSON.stringify on objects without key sorting |
@@ -59,7 +61,7 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/sessions.js (planned T3) | Mint, read, expire, and revoke sessions, set cookies | Accept a session ID that fails the HMAC check |
 | src/webauthn.js (planned T3) | Wrap SimpleWebAuthn calls and the pending ceremony map | Reuse a challenge |
 | src/routes/org.js (planned T3) | Organizer setup, login, console, prompts, assign, reset, seed | Answer a request without an organizer session |
-| src/routes/enroll.js (planned T4) | Draft teams, roster edits, enroll ceremony | Change a roster after enrollment |
+| src/routes/enroll.js (planned T4, override in T11) | Draft teams, roster edits, key source, enroll ceremony, override ceremony | Change a roster after enrollment, or finish an override without the organizer tap |
 | src/routes/tap.js (planned T5) | Team tap ceremony, reveal, client failure report | Mint a session without a verified assertion |
 | src/routes/team.js (planned T5) | Read tier team room, member select, download | Take a team ID from the request |
 | src/routes/sign.js (planned T6) | Sign ceremony and submission creation | Create a submission without a verified assertion |
@@ -70,7 +72,7 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/routes/faq.js (planned T8) | FAQ ask and bundle read endpoints | Change any state except the unanswered list and log |
 | src/routes/commons.js (planned T9) | Team chat, public commons, moderation | Trust a team or handle sent by the client |
 | src/drama.js (planned T9) | Turn log entries and deadlines into public system posts | Read prompt or secret fields |
-| src/routes/secrets.js (planned T10) | Organizer notes, secret issue, secret reveal tap | Send a secret body before its reveal tap |
+| src/routes/secrets.js (parked: T10 cut by cut line 1) | Organizer notes, secret issue, secret reveal tap | Send a secret body before its reveal tap |
 | public/index.html (planned T1) | Landing page with links | Contain event data |
 | public/css/app.css (planned T1) | All styles, including the fail banner | Set error text below 32px |
 | public/js/api.js (planned T1) | `api()` fetch wrapper and `showFail()` banner | Use innerHTML with server data |

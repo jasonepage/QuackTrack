@@ -322,8 +322,15 @@ function renderPrompts(data) {
 
 const shortClock = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
+// The last state each card showed, so a card pops only when it changes.
+const shownState = new Map();
+
 function teamCard(team) {
   const card = el('article', undefined, 'team-card team-' + team.state.toLowerCase());
+  const before = shownState.get(team.id);
+  if (before && before !== team.state) card.classList.add('just-changed');
+  shownState.set(team.id, team.state);
+  if (tappingTeamId === team.id) card.classList.add('tapping');
   const head = el('div', undefined, 'team-head');
   head.append(stateBadge(team.state), el('h3', team.name));
   // FR-41 and FR-39: black on orange, until reset.
@@ -523,6 +530,7 @@ async function replaceKey(team) {
 
 // ---------- Whole page ----------
 let lastData = null;
+let shownSubmitted = 0;
 
 function render(data) {
   lastData = data;
@@ -534,7 +542,15 @@ function render(data) {
   const glance = $('glance');
   if (data.chain.ok) {
     glance.className = 'glance-strip';
-    $('glance-count').textContent = `${data.glance.submitted} of ${data.glance.teams} submitted`;
+    const count = $('glance-count');
+    const text = `${data.glance.submitted} of ${data.glance.teams} submitted`;
+    if (count.textContent && count.textContent !== text && data.glance.submitted > shownSubmitted) {
+      count.classList.remove('bump');
+      void count.offsetWidth; // restart the animation
+      count.classList.add('bump');
+    }
+    shownSubmitted = data.glance.submitted;
+    count.textContent = text;
     $('chain-badge').textContent = 'Log verified';
     $('chain-badge').hidden = false;
   } else {

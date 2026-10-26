@@ -25,10 +25,16 @@ function localTime(iso) {
   return new Date(iso).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
 }
 
+let revealShown = false; // the reveal animation plays once per page load
+
 function renderPrompt() {
   const card = $('prompt');
   card.replaceChildren();
   card.className = 'prompt-card prompt-' + room.promptState;
+  if (room.promptState === 'revealed' && !revealShown) {
+    revealShown = true;
+    card.classList.add('reveal-in');
+  }
   if (room.promptState === 'sealed') {
     // FR-38 reveal moment.
     card.append(el('p', `Sealed prompt for ${room.name}. Tap your key to reveal.`, 'sealed-line'));
@@ -254,9 +260,9 @@ function formValues() {
   };
 }
 
-function signedPanel(sub) {
+function signedPanel(sub, celebrate) {
   const panel = $('sign-panel');
-  panel.className = 'sign-panel sign-done';
+  panel.className = 'sign-panel sign-done' + (celebrate ? ' celebrate' : '');
   const link = el('a', 'Open receipt', 'action-link');
   link.href = sub.receiptUrl;
   panel.replaceChildren(
@@ -264,6 +270,19 @@ function signedPanel(sub) {
     el('p', 'Signed ' + new Date(sub.signedAt).toLocaleString(), 'signed-time'),
     link
   );
+  if (celebrate) {
+    // A few falling bits, only at the real sign moment, never on a poll.
+    const burst = el('div', undefined, 'confetti');
+    burst.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 36; i++) {
+      const bit = document.createElement('i');
+      bit.style.left = `${(i * 37) % 100}%`;
+      bit.style.animationDelay = `${(i % 9) * 0.09}s`;
+      burst.append(bit);
+    }
+    panel.append(burst);
+    setTimeout(() => burst.remove(), 2500);
+  }
   panel.hidden = false;
   $('sign-form').hidden = true;
 }
@@ -341,7 +360,7 @@ async function signFlow(tamperDescription) {
     return;
   }
   // FR-38 receipt moment.
-  signedPanel(result);
+  signedPanel(result, true);
   signing = false;
   lastJson = '';
   load();

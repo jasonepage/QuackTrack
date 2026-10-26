@@ -128,6 +128,9 @@ Parked in Session 2 (real, but wrong for the 7 hour build):
 - Hardware or resource checkout per team, other than the security keys. Reason: not in the demo.
 - Recovering a lost organizer credential. Reason: the only recovery is a restart, which wipes the event; use a passkey on the host laptop so it cannot be lost apart from the laptop.
 
+Parked in Session 4 (design pass, October 25, 2026):
+- Teams create themselves at /team with a passkey ("Create a new team"), and the organizer approves them on the console, so the console's New team form needs only one key type. Sketch: a new PENDING team state between DRAFT and ENROLLED, two ceremony tier endpoints (create options and verify) that enroll the passkey and log `team.requested`, an organizer Approve and Reject action logged as `team.approved` and `team.rejected`, a rate limit and a cap so one phone cannot create many teams, and the honest label rule unchanged (it shows "Platform passkey", never "Security key"). Reason parked: not in the 60 second demo, and it changes how a team comes into being, which needs the SRS state machine and tickets updated first. It belongs to hosted mode, where solo hackers are on their own phones.
+
 Parked in Session 3:
 - GitHub sign-in to prove a member owns their handle. Reason: it needs a GitHub app, internet at the event, and accounts, which breaks the landing page promise "No account, no password". The key is the proof; the typed handle is a name tag. A stretch goal after the demo works.
 

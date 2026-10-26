@@ -93,8 +93,8 @@ If a call fails or takes over 15 seconds, that one question falls back to the li
 Before the clock starts:
 
 1. Run `npm start` on the stage laptop and open http://localhost:3000/console in Chrome. Log in with the organizer passkey.
-2. If an earlier run is still in memory, type `RESET` in the Event box and click Reset event. Write down the key list first.
-3. Click Load demo data. It makes two prompts, Team Mallard (Pool 01, yellow tag) and Team Teal (Pool 02, blue tag), and the demo event information. The rosters start empty: a person joins a team only by tapping that team's key.
+2. If an earlier run is still in memory, scroll to Event at the bottom of the console, type `RESET`, and click Reset event. Write down the key list first.
+3. Click Load demo data (beside the Teams heading). It makes two prompts, Team Mallard (Pool 01, yellow tag) and Team Teal (Pool 02, blue tag), and the demo event information. The rosters start empty: a person joins a team only by tapping that team's key.
 4. In a second window open http://localhost:3000/team, pick Team Mallard, choose "I'm new to this team", and type `jasonepage` and a display name. Do not click Join yet.
 5. Keep the project name, repo link (owned by `jasonepage`), full commit SHA from `git rev-parse HEAD`, and description ready to paste.
 

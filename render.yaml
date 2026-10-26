@@ -1,0 +1,30 @@
+# render.yaml: QuackTrack hosted mode on Render (SDS.md section 12, S1).
+# This file holds no secret values. Render asks for each "sync: false"
+# value once, when the Blueprint is created, and generates SESSION_SECRET.
+services:
+  - type: web
+    name: quacktrack
+    runtime: node
+    # About $7 a month. Not the free instance: a free service sleeps after
+    # 15 idle minutes, and a restart wipes the in-memory event.
+    plan: 0.5c-512mb
+    region: oregon
+    buildCommand: npm ci
+    startCommand: npm start
+    # A deploy restarts the server and wipes the event, so pushing to main
+    # never redeploys on its own. Deploy by hand from the dashboard.
+    autoDeployTrigger: "off"
+    envVars:
+      # The exact address people open, for example https://quacktrack.onrender.com
+      - key: ORIGIN
+        sync: false
+      # The host part of ORIGIN, for example quacktrack.onrender.com
+      - key: RP_ID
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: AI_PROVIDER
+        value: gemini
+      # Your own Gemini key, typed into the Render dashboard only.
+      - key: GEMINI_API_KEY
+        sync: false

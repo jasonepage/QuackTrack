@@ -49,6 +49,7 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | package.json | Dependencies and `npm start` | Add a dependency beyond express and the two @simplewebauthn packages |
 | package-lock.json | Exact installed dependency versions, written by `npm install` | Be edited by hand |
 | .gitignore | Keep node_modules, .env, and logs out of git | Be removed |
+| render.yaml | Render Blueprint for hosted mode (SDS.md S1): one web service, settings, and which values the dashboard asks for | Contain a secret value, or turn on auto deploy |
 | LICENSE | MIT license text | Change license |
 | README.md | How to run local mode and hosted mode, env var table, FAQ assistant setup, demo steps, key pool sheet, testing notes | Contain a real key or secret |
 | server.js | Create the Express app, guards, mount routes, serve the static receipt page at /receipt/:id, start listening | Hold business logic |

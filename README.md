@@ -23,13 +23,19 @@ The terminal prints `QuackTrack running at http://localhost:3000`. Open exactly 
 
 The same code with only environment variables changed. Teams use their own laptops and phones at the HTTPS address.
 
-1. Create a Render Starter web service from the public repo. Start command: `npm start`.
-2. Set these in the Render dashboard (never in a file in the repo):
-   - `ORIGIN=https://<service>.onrender.com`
-   - `RP_ID=<service>.onrender.com`
-   - `SESSION_SECRET` (a long random value)
-   - `AI_PROVIDER=gemini` and `GEMINI_API_KEY` (your own free tier key)
-3. Open the setup link from the Render log (see below).
+The repo has a Render Blueprint, `render.yaml`. It holds no secret values.
+
+1. In the Render dashboard click **New**, then **Blueprint**, and connect this repo. Render reads `render.yaml`: one web service named `quacktrack` on the `0.5c-512mb` instance (about $7 a month) in Oregon, built with `npm ci` and started with `npm start`.
+2. Render asks for three values (never put them in a file in the repo):
+   - `ORIGIN`: `https://quacktrack.onrender.com`
+   - `RP_ID`: `quacktrack.onrender.com`
+   - `GEMINI_API_KEY`: your own Gemini key
+
+   Render makes `SESSION_SECRET` itself, and `AI_PROVIDER` is already `gemini`.
+3. When the deploy finishes, look at the address at the top of the service page. If Render gave it a different name (for example `quacktrack-ab12.onrender.com`), change `ORIGIN` and `RP_ID` to match under **Environment**, save, and deploy again.
+4. Open the **Logs** tab and copy the `Organizer setup:` link (see below).
+
+Do not use the free instance: it sleeps after 15 minutes without visitors, and a restart wipes the event. Pushing to main does not redeploy (`autoDeployTrigger: off`), because every deploy restarts the server and wipes the event; deploy by hand with **Manual Deploy** before the event starts. Delete the service after the event to stop paying.
 
 When `ORIGIN` starts with `https://`, cookies carry the `Secure` flag and Express trusts one proxy hop. A Render restart or redeploy wipes the event.
 

@@ -4,7 +4,7 @@
 
 <h1 align="center">QuackTrack</h1>
 
-<p align="center"><strong>One security key is your team's identity. Tap to see your prompt. Tap to sign your submission. Nobody can fake either.</strong></p>
+<p align="center"><strong>One security key is your team's identity. Tap to reveal your prompt. Tap to sign your submission. Nobody can fake either.</strong></p>
 
 <p align="center">
   Live: <a href="https://quacktrack-987o.onrender.com">quacktrack-987o.onrender.com</a> &middot;
@@ -140,8 +140,8 @@ The repo has a Render Blueprint, `render.yaml`. It holds no secret values.
 
 1. In the Render dashboard click **New**, then **Blueprint**, and connect this repo. Render reads `render.yaml`: one web service named `quacktrack` on the `0.5c-512mb` instance (about $7 a month) in Oregon, built with `npm ci` and started with `npm start`.
 2. Render asks for three values (never put them in a file in the repo):
-   - `ORIGIN`: `https://quacktrack.onrender.com`
-   - `RP_ID`: `quacktrack.onrender.com`
+   - `ORIGIN`: `https://quacktrack-987o.onrender.com`
+   - `RP_ID`: `quacktrack-987o.onrender.com`
    - `GEMINI_API_KEY`: your own Gemini key
 
    Render makes `SESSION_SECRET` itself, and `AI_PROVIDER` is already `gemini`.

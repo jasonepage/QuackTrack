@@ -39,9 +39,10 @@
   }
 
   // FR-38: each check is a row with PASS or FAIL in at least 32px.
-  function checkRow(label, ok) {
+  function checkRow(label, ok, means) {
     const row = el('div', undefined, 'check-item ' + (ok ? 'check-pass' : 'check-fail'));
     row.append(el('span', ok ? 'PASS' : 'FAIL', 'check-word'), el('span', label, 'check-label'));
+    if (ok) row.append(el('p', means, 'check-means')); // plain words for a judge
     if (!ok) row.append(el('p', QT_BANNER.CHECK_FAILED, 'check-why')); // E69
     return row;
   }
@@ -55,16 +56,20 @@
     override.hidden = r.overrideSeq === null;
     override.textContent = r.overrideSeq === null ? '' : `OVERRIDE: this team's key was replaced by the organizer before signing (log entry ${r.overrideSeq}).`;
 
+    const allPass = data.checks.contentHash && data.checks.challenge && data.checks.signature;
+    const verdict = $('r-verdict');
+    verdict.hidden = !allPass;
+    verdict.textContent = allPass ? `All three checks pass. This is exactly what ${r.teamName} signed, and when.` : '';
     $('checks').replaceChildren(
-      checkRow('Content hash matches', data.checks.contentHash),
-      checkRow('Challenge matches', data.checks.challenge),
-      checkRow('Signature valid', data.checks.signature)
+      checkRow('Content hash matches', data.checks.contentHash, 'The project, repo, commit, description, and declaration below hash to the value the key signed. Nothing was changed after signing.'),
+      checkRow('Challenge matches', data.checks.challenge, 'The key was asked to sign this hash and nothing else. A signature for other content cannot be reused here.'),
+      checkRow('Signature valid', data.checks.signature, `${r.teamName}'s own key made this signature. The check runs again every time this page opens.`)
     );
 
     const facts = $('r-facts');
     facts.replaceChildren();
     addFact(facts, 'Roster signed', r.roster.length ? r.roster.join(', ') : 'No members');
-    addFact(facts, 'Credential', r.label);
+    addFact(facts, 'Key type', r.label);
     addFact(facts, 'Project', r.projectName);
     addFact(facts, 'Repo', link(r.repoUrl, r.repoUrl));
     const commit = el('span');

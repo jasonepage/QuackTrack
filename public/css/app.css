@@ -1028,6 +1028,17 @@ a.small-button { display: inline-block; text-decoration: none; }
 .check-word { font-size: 40px; font-weight: 800; min-width: 6rem; }
 .check-label { font-size: 32px; font-weight: 700; }
 .check-why { flex-basis: 100%; margin: 0; font-size: 32px; font-weight: 700; }
+.check-means { flex-basis: 100%; margin: 0; font-size: 1.0625rem; font-weight: 500; color: #e9f5ec; }
+.verdict {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 10px solid var(--uo-yellow);
+  background: var(--soft);
+  border-radius: 0 0.75rem 0.75rem 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
 .raw-facts dd {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.95rem;

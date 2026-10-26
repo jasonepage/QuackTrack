@@ -77,12 +77,12 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/routes/secrets.js (parked: T10 cut by cut line 1) | Organizer notes, secret issue, secret reveal tap | Send a secret body before its reveal tap |
 | public/index.html | Landing page with links | Contain event data |
 | public/favicon.svg, public/favicon.ico, public/apple-touch-icon.png | The QuackTrack icon for browser tabs and phone home screens | Contain event data |
-| public/css/app.css | All styles, including the fail banner | Set error text below 32px |
+| public/css/app.css | All styles, including the fail banner, in the University of Oregon colors (UO Green #007030, UO Yellow #FEE11A, dark text on yellow); on the console green means done only, so the console top bar is dark | Set error text below 32px, load a font or file from outside this server, or use the UO "O" logo or the Duck mascot |
 | public/js/api.js | `api()` fetch wrapper, `showFail()` banner, banner only sentences, team tap helper | Use innerHTML with server data |
 | public/privacy.html | Plain words privacy policy: what is stored, never stored, memory only, contact | Claim anything the code does not do |
 | public/support.html | Plain words help: organizer desk, lost or broken key, common problems, GitHub Issues | Link to the organizer console |
 | public/setup.html, public/js/setup.js | Organizer first credential enrollment | Work without the setup token |
-| public/console.html, public/js/console.js | Organizer console: one second polling, at a glance strip, team rows, Replace key (OVERRIDE), log as plain sentences, FAQ status, unanswered questions, event information form, The Quad with moderation, mute, Reset, Load demo data | Cache data in localStorage |
+| public/console.html, public/js/console.js | Organizer console in demo order: at a glance strip (submitted count, Log verified badge, count of questions to answer out loud), team cards two across with Load demo data beside them, the log as plain sentences, then prompts, FAQ status and unanswered questions, event information form, The Quad with moderation, mute, Replace key (OVERRIDE), Reset at the bottom | Cache data in localStorage |
 | public/team.html, public/js/team.js | Team picker and tap in | Show anything about a prompt |
 | public/room.html, public/js/room.js | Team room, sign form, locked signing panel, receipt moment, `QT_TEST.tamperSign`, FAQ box and searchable event information, link to /chat | Render any field with innerHTML |
 | public/chat.html, public/js/chat.js | The /chat page: who is at the keyboard, team chat, The Quad | Render any field with innerHTML, or show another team's chat |

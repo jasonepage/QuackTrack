@@ -50,7 +50,7 @@ function renderPrompt() {
     d.addEventListener('click', download);
     card.append(d);
   } else {
-    card.append(el('p', 'No prompt yet. This page updates by itself.', 'muted'));
+    card.append(el('p', 'No prompt yet. This page updates by itself when the organizer assigns one.', 'muted'));
   }
 }
 
@@ -65,7 +65,7 @@ function render() {
 
   const facts = $('team-facts');
   facts.replaceChildren();
-  const rows = [['Credential', room.label], ['Key', room.keySourceText]];
+  const rows = [['Key type', room.label], ['Which key', room.keySourceText]];
   if (room.deadline) rows.push(['Deadline', localTime(room.deadline)]);
   for (const [k, v] of rows) facts.append(el('dt', k), el('dd', v || ''));
 

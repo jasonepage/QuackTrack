@@ -22,7 +22,7 @@ const OWNER_CHECK = {
 // (FR-40: 1 to 20 characters). Red and green are left out on purpose:
 // on the console they mean Not submitted and Submitted.
 const TAG_COLORS = [
-  { name: 'yellow', swatch: '#ffd23f' },
+  { name: 'yellow', swatch: '#FEE11A' },
   { name: 'blue', swatch: '#1f5fd6' },
   { name: 'orange', swatch: '#ff8c1a' },
   { name: 'purple', swatch: '#7a3fc2' },
@@ -304,7 +304,7 @@ function teamCard(team) {
 
   if (team.state === 'DRAFT') {
     const draftFacts = el('dl', undefined, 'facts');
-    draftFacts.append(el('dt', 'Credential'), el('dd', 'Not enrolled'));
+    draftFacts.append(el('dt', 'Key type'), el('dd', 'Not enrolled'));
     card.append(draftFacts);
     if (team.roster.length) card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
     card.append(keySourceBlock(team));
@@ -329,7 +329,7 @@ function teamCard(team) {
     card.append(actions);
   } else {
     const facts = el('dl', undefined, 'facts');
-    for (const [k, v] of [['Credential', team.label], ['Key', team.keySourceText], ['Fingerprint', team.fingerprint]]) {
+    for (const [k, v] of [['Key type', team.label], ['Which key', team.keySourceText], ['Fingerprint', team.fingerprint]]) {
       facts.append(el('dt', k), el('dd', v || ''));
     }
     facts.append(el('dt', 'Prompt'), el('dd', team.assignedTrack || 'None assigned'));
@@ -364,12 +364,16 @@ function teamCard(team) {
     card.append(facts);
     if (team.state === 'ENROLLED' && lastData.prompts.length) card.append(assignForm(team));
     card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
-    // FR-23: mute or unmute this team in The Quad.
-    const mute = el('div', undefined, 'team-actions');
-    if (team.muted) mute.append(el('span', 'Muted in The Quad', 'chip chip-red'));
-    mute.append(button(team.muted ? 'Unmute' : 'Mute in The Quad', 'link-button', () => moderate(`/api/org/teams/${encodeURIComponent(team.id)}/mute`, { muted: !team.muted })));
-    card.append(mute);
-    if (team.state === 'ENROLLED' || team.state === 'REVEALED') card.append(replaceKeyBlock(team));
+    // FR-23 mute and FR-41 Replace key share one row, so the card stays short.
+    const actions = el('div', undefined, 'team-actions');
+    if (team.muted) actions.append(el('span', 'Muted in The Quad', 'chip chip-red'));
+    actions.append(button(team.muted ? 'Unmute' : 'Mute in The Quad', 'link-button', () => moderate(`/api/org/teams/${encodeURIComponent(team.id)}/mute`, { muted: !team.muted })));
+    card.append(actions);
+    if (team.state === 'ENROLLED' || team.state === 'REVEALED') {
+      const [opener, panel] = replaceKeyBlock(team);
+      if (opener) actions.append(opener);
+      if (panel) card.append(panel);
+    }
   }
   return card;
 }
@@ -387,15 +391,16 @@ function overrideDraftFor(team) {
   return overrideDraft.get(team.id);
 }
 
+// Returns [opener, panel]: the Replace key button for the actions row, or
+// the open OVERRIDE panel (or the tap line) to place below it.
 function replaceKeyBlock(team) {
   const box = el('div', undefined, 'replace-key');
   if (overrideStep && overrideStep.teamId === team.id) {
     box.append(el('p', overrideStep.step === 'org' ? 'OVERRIDE: tap the organizer key now' : 'OVERRIDE: tap the replacement key now', 'tap-now'));
-    return box;
+    return [null, box];
   }
   if (!replaceOpen.has(team.id)) {
-    box.append(button('Replace key', 'link-button', () => { replaceOpen.add(team.id); render(lastData); }));
-    return box;
+    return [button('Replace key', 'link-button', () => { replaceOpen.add(team.id); render(lastData); }), null];
   }
   const d = overrideDraftFor(team);
   box.append(el('h4', 'OVERRIDE: replace a lost or broken key', 'override-head'));
@@ -421,7 +426,7 @@ function replaceKeyBlock(team) {
     button('Close', 'link-button', () => { replaceOpen.delete(team.id); render(lastData); })
   );
   box.append(actions);
-  return box;
+  return [null, box];
 }
 
 async function replaceKey(team) {
@@ -504,6 +509,12 @@ function render(data) {
     $('chain-badge').textContent = '';
     $('chain-badge').hidden = true;
   }
+  // Questions the FAQ assistant could not answer, counted in the strip so
+  // the list further down is not missed.
+  const open = data.unanswered.length;
+  const uq = $('glance-unanswered');
+  uq.hidden = open === 0;
+  uq.textContent = open === 1 ? '1 question to answer out loud' : `${open} questions to answer out loud`;
   const head = data.chain.head || '';
   $('chain-head-short').textContent = head ? `${head.slice(0, 4)}...${head.slice(-4)}` : 'none';
   $('chain-head').textContent = head;

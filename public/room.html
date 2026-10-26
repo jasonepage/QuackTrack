@@ -13,7 +13,7 @@
 </head>
 <body>
   <header class="topbar topbar-split">
-    <span class="wordmark">QuackTrack</span>
+    <span class="wordmark"><img class="brand-icon" src="/favicon.svg" alt="" width="36" height="36">QuackTrack <span class="topbar-tag">Team room</span></span>
     <button id="leave" class="small-button" type="button" hidden>Leave room</button>
   </header>
 
@@ -24,12 +24,13 @@
       <div id="notices"></div>
       <h1 id="team-name"></h1>
       <dl id="team-facts" class="facts"></dl>
-      <p><a class="small-button" href="/chat">Team chat and The Quad</a></p>
 
+      <!-- The demo path in order: the prompt, then the submission. -->
       <section id="prompt" class="prompt-card" aria-live="polite"></section>
 
       <section id="submit" class="room-section" hidden>
         <h2>Submission</h2>
+        <p class="muted">Fill in all four, tick the box, then sign with your key. A submission cannot be changed after signing.</p>
         <form id="sign-form" class="prompt-form sign-form" autocomplete="off" novalidate>
           <label>Project name <input id="sign-project" maxlength="80"></label>
           <label>Repo link <input id="sign-repo" type="url" maxlength="200" placeholder="https://github.com/owner/repo" spellcheck="false"></label>
@@ -43,12 +44,14 @@
 
       <section class="room-section">
         <h2>Who is at the keyboard?</h2>
+        <p class="muted">Pick yourself before you chat, post, or ask a question.</p>
         <div id="members" class="member-picker"></div>
       </section>
 
       <section class="room-section">
         <h2>Roster</h2>
         <ul id="roster" class="roster"></ul>
+        <p><a class="small-button" href="/chat">Team chat and The Quad</a></p>
       </section>
 
       <section id="faq" class="room-section faq">

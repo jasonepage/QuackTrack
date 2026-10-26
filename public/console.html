@@ -12,22 +12,26 @@
   <script type="module" src="/js/console.js"></script>
 </head>
 <body>
-  <header class="topbar topbar-split">
-    <span class="wordmark">QuackTrack <span class="topbar-tag">Console</span></span>
+  <!-- The console top bar is dark on purpose: on this page green only ever means done. -->
+  <header class="topbar topbar-console topbar-split">
+    <span class="wordmark"><img class="brand-icon" src="/favicon.svg" alt="" width="36" height="36">QuackTrack <span class="topbar-tag">Console</span></span>
     <button id="logout" class="link-button" type="button" hidden>Log out</button>
   </header>
 
   <main class="wrap console">
     <section id="login" class="doc" hidden>
       <h1>Organizer console</h1>
+      <p class="lede">Tap the organizer key or passkey to open the console.</p>
       <button id="login-button" class="action-button" type="button">Log in with key</button>
     </section>
 
     <section id="main" hidden>
-      <!-- FR-39: how many submitted, and whether the log verifies, from across the room. -->
+      <!-- FR-39: how many submitted, whether the log verifies, and how many
+           questions wait for an answer, all readable from across the room. -->
       <div id="glance" class="glance-strip" role="status">
         <span id="glance-count" class="glance-count"></span>
         <span id="chain-badge" class="chain-badge"></span>
+        <a id="glance-unanswered" class="glance-unanswered" href="#faq-section" hidden></a>
       </div>
       <details class="chain-head">
         <summary>Log head <code id="chain-head-short"></code></summary>
@@ -35,12 +39,14 @@
       </details>
       <p id="memory-notice" class="notice-box"></p>
 
+      <!-- The demo path in order: teams, then the log tail. -->
       <div class="console-bar">
         <h2>Teams</h2>
+        <button id="seed" class="small-button" type="button">Load demo data</button>
       </div>
       <form id="new-team" class="inline-form" autocomplete="off">
         <label>Team name <input id="new-team-name" name="name" maxlength="40" required></label>
-        <label>Credential
+        <label>Key type
           <select id="new-team-mode" name="mode">
             <option value="key">Security key</option>
             <option value="passkey">Solo passkey</option>
@@ -49,37 +55,6 @@
         <button class="small-button" type="submit">New team</button>
       </form>
       <div id="teams" class="team-list"></div>
-
-      <div class="console-bar">
-        <h2>Prompts</h2>
-      </div>
-      <form id="new-prompt" class="prompt-form" autocomplete="off">
-        <label>Track <input id="prompt-track" maxlength="60" required></label>
-        <label>Instructions <textarea id="prompt-instructions" maxlength="4000" rows="4" required></textarea></label>
-        <label>Deadline <input id="prompt-deadline" type="datetime-local" required></label>
-        <button class="small-button" type="submit">Create prompt</button>
-      </form>
-      <ul id="prompts" class="prompt-list"></ul>
-
-      <div class="console-bar">
-        <h2>FAQ assistant</h2>
-        <span id="ai-status" class="ai-status"></span>
-      </div>
-      <h3>Questions it could not answer</h3>
-      <p class="muted">Newest first. Answer these out loud.</p>
-      <ul id="unanswered" class="unanswered"></ul>
-      <form id="bundle-form" class="bundle-form" autocomplete="off" novalidate>
-        <label>Event information (start each section with a line beginning "# ")
-          <textarea id="bundle-text" rows="12" maxlength="30000" spellcheck="false"></textarea>
-        </label>
-        <button class="small-button" type="submit">Save event information</button>
-      </form>
-
-      <div class="console-bar">
-        <h2>The Quad</h2>
-      </div>
-      <p class="muted">Pinned posts show first. Team chat is never shown here.</p>
-      <ol id="quad-mod" class="quad-list"></ol>
 
       <div class="console-bar">
         <h2>Action log</h2>
@@ -94,10 +69,41 @@
       </div>
 
       <div class="console-bar">
+        <h2>Prompts</h2>
+      </div>
+      <p class="muted">Make a prompt here, then assign it on a team's card above.</p>
+      <form id="new-prompt" class="prompt-form" autocomplete="off">
+        <label>Track <input id="prompt-track" maxlength="60" required></label>
+        <label>Instructions <textarea id="prompt-instructions" maxlength="4000" rows="4" required></textarea></label>
+        <label>Deadline <input id="prompt-deadline" type="datetime-local" required></label>
+        <button class="small-button" type="submit">Create prompt</button>
+      </form>
+      <ul id="prompts" class="prompt-list"></ul>
+
+      <div id="faq-section" class="console-bar">
+        <h2>FAQ assistant</h2>
+        <span id="ai-status" class="ai-status"></span>
+      </div>
+      <h3>Questions it could not answer</h3>
+      <p class="muted">Newest first. Answer these out loud.</p>
+      <ul id="unanswered" class="unanswered"></ul>
+      <form id="bundle-form" class="bundle-form" autocomplete="off" novalidate>
+        <label>Event information the assistant may quote (start each section with a line beginning "# ")
+          <textarea id="bundle-text" rows="12" maxlength="30000" spellcheck="false"></textarea>
+        </label>
+        <button class="small-button" type="submit">Save event information</button>
+      </form>
+
+      <div class="console-bar">
+        <h2>The Quad</h2>
+      </div>
+      <p class="muted">Pinned posts show first. Team chat is never shown here.</p>
+      <ol id="quad-mod" class="quad-list"></ol>
+
+      <div class="console-bar">
         <h2>Event</h2>
       </div>
       <div class="event-actions">
-        <button id="seed" class="small-button" type="button">Load demo data</button>
         <form id="reset-form" class="reset-form" autocomplete="off">
           <p class="tag-rule">Reset also wipes which team holds which key. Write down the key list first.</p>
           <label>Type RESET to confirm <input id="reset-confirm" spellcheck="false" autocapitalize="characters"></label>

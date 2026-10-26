@@ -64,14 +64,14 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/routes/org.js | Organizer setup, login, console, prompts, assign, event information (bundle), reset, seed | Answer a request without an organizer session |
 | src/routes/enroll.js | Draft teams (also used by the demo seed), key source, enroll ceremony, roster removal, console team rows with submission columns, the OVERRIDE ceremony (options, organizer authorize, replacement verify) | Put a member on a roster (members join through tap.js), or finish an override without the organizer tap |
 | src/routes/tap.js | Team tap ceremony, join (T12), reveal, client failure report | Mint a session without a verified assertion |
-| src/routes/team.js | Read tier team room with its submission summary, FAQ mode, and newest team chat, member select, download | Take a team ID from the request |
+| src/routes/team.js | Read tier team room with its submission summary and FAQ mode, member select, download | Take a team ID from the request |
 | src/routes/sign.js | Sign ceremony, submission creation with the signed roster copy, repo owner check | Create a submission without a verified assertion |
 | src/routes/public.js | Public team list and receipts with their three checks | Return a prompt, secret, or roster, except the signed roster copy on a receipt |
 | src/ai/askFAQ.js | Pick provider, enforce grounding (JSON and verbatim quote checks), refusal, last call status | Read the store beyond the context bundle |
 | src/ai/gemini.js | Call the Gemini API | Log or return the API key |
 | src/ai/gemma.js | Call Ollama | Call any host except OLLAMA_URL |
 | src/routes/faq.js | FAQ ask (unanswered list) and bundle sections endpoints | Change any state except the unanswered list and log |
-| src/routes/commons.js | Team chat, The Quad (public commons) and trade offers, moderation (pin, delete, mute) | Trust a team or handle sent by the client |
+| src/routes/commons.js | Team chat (read and post for /chat), The Quad (public commons) and trade offers, moderation (pin, delete, mute) | Trust a team or handle sent by the client |
 | src/drama.js | Turn log entries and deadlines into public system posts, and run the 15 second deadline timer | Read prompt or secret fields |
 | src/routes/secrets.js (parked: T10 cut by cut line 1) | Organizer notes, secret issue, secret reveal tap | Send a secret body before its reveal tap |
 | public/index.html | Landing page with links | Contain event data |
@@ -83,5 +83,6 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | public/setup.html, public/js/setup.js | Organizer first credential enrollment | Work without the setup token |
 | public/console.html, public/js/console.js | Organizer console: one second polling, at a glance strip, team rows, Replace key (OVERRIDE), log as plain sentences, FAQ status, unanswered questions, event information form, The Quad with moderation, mute, Reset, Load demo data | Cache data in localStorage |
 | public/team.html, public/js/team.js | Team picker and tap in | Show anything about a prompt |
-| public/room.html, public/js/room.js | Team room, sign form, locked signing panel, receipt moment, `QT_TEST.tamperSign`, team chat, The Quad, FAQ box and searchable event information | Render any field with innerHTML |
+| public/room.html, public/js/room.js | Team room, sign form, locked signing panel, receipt moment, `QT_TEST.tamperSign`, FAQ box and searchable event information, link to /chat | Render any field with innerHTML |
+| public/chat.html, public/js/chat.js | The /chat page: who is at the keyboard, team chat, The Quad | Render any field with innerHTML, or show another team's chat |
 | public/receipt.html, public/js/receipt.js | Public receipt, its verification checks, and the OVERRIDE line when the key was replaced before signing | Show the prompt |

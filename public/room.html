@@ -24,6 +24,7 @@
       <div id="notices"></div>
       <h1 id="team-name"></h1>
       <dl id="team-facts" class="facts"></dl>
+      <p><a class="small-button" href="/chat">Team chat and The Quad</a></p>
 
       <section id="prompt" class="prompt-card" aria-live="polite"></section>
 
@@ -48,36 +49,6 @@
       <section class="room-section">
         <h2>Roster</h2>
         <ul id="roster" class="roster"></ul>
-      </section>
-
-      <section class="room-section">
-        <h2>Team chat</h2>
-        <p class="chat-rule">Only your team sees this chat in QuackTrack. The organizer runs the server, so never post passwords or keys.</p>
-        <ol id="chat" class="chat-list"></ol>
-        <form id="chat-form" class="faq-form" autocomplete="off" novalidate>
-          <label>Message <input id="chat-text" maxlength="500"></label>
-          <button class="small-button primary" type="submit">Send</button>
-        </form>
-        <p class="muted">Messages cannot be edited or deleted.</p>
-      </section>
-
-      <section class="room-section quad">
-        <h2>The Quad</h2>
-        <p class="muted">Every team sees The Quad.</p>
-        <form id="quad-form" class="quad-form" autocomplete="off" novalidate>
-          <div class="radio-row">
-            <label><input type="radio" name="quad-kind" value="chat" checked> Post</label>
-            <label><input type="radio" name="quad-kind" value="trade"> Trade offer</label>
-          </div>
-          <div id="quad-trade" class="quad-trade" hidden>
-            <label>Offering <input id="quad-offer" maxlength="80" placeholder="soldering iron"></label>
-            <label>Want <input id="quad-want" maxlength="80" placeholder="USB-C cable"></label>
-          </div>
-          <label>Post <input id="quad-text" maxlength="280"></label>
-          <button class="small-button primary" type="submit">Post</button>
-        </form>
-        <p class="muted">Posts cannot be edited. Only the organizer can remove a post.</p>
-        <ol id="quad" class="quad-list"></ol>
       </section>
 
       <section id="faq" class="room-section faq">

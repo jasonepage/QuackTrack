@@ -1,7 +1,8 @@
 // public/js/room.js: the team room (SRS.md FR-13, FR-14, FR-15, FR-38),
-// the FAQ box and searchable event information list (FR-25 to FR-27),
-// and the Sign form, locked signing panel, and receipt moment (FR-28,
-// FR-29, FR-38). The team comes from this browser's session only. Every
+// the FAQ box and searchable event information list (FR-25 to FR-27), and
+// the Sign form, locked signing panel, and receipt moment (FR-28, FR-29,
+// FR-38). Team chat and The Quad live on their own page, /chat
+// (public/js/chat.js). The team comes from this browser's session only. Every
 // server string is rendered with textContent, never innerHTML. Polls every
 // 2 seconds, except while a signing tap is open.
 import { startAuthentication } from '/vendor/swa/index.js';
@@ -71,7 +72,6 @@ function render() {
   renderPrompt();
   renderSubmit();
   renderFaq();
-  renderChat();
 
   const members = $('members');
   members.replaceChildren();
@@ -167,112 +167,6 @@ async function download() {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-
-// ---------- Team chat (FR-16) and The Quad (FR-20 to FR-22) ----------
-function shortTime(iso) {
-  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
-
-function renderChat() {
-  const list = $('chat');
-  const atBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 8;
-  list.replaceChildren();
-  if (!room.chat.length) list.append(el('li', 'No messages yet.', 'muted'));
-  for (const m of room.chat) {
-    const li = el('li', undefined, 'chat-item');
-    const meta = el('p', undefined, 'post-meta');
-    meta.append(el('strong', m.handle), document.createTextNode(` ${m.role}, ${shortTime(m.createdAt)}`));
-    li.append(meta, el('p', m.text, 'post-text'));
-    list.append(li);
-  }
-  if (atBottom) list.scrollTop = list.scrollHeight; // newest at the bottom
-}
-
-let lastQuad = '';
-function postItem(p) {
-  const li = el('li', undefined, 'quad-item' + (p.pinned ? ' pinned' : '') + (p.kind === 'system' ? ' system' : ''));
-  if (p.pinned) li.append(el('span', 'Pinned', 'chip'));
-  if (p.kind === 'removed') {
-    li.append(el('p', p.text, 'post-text muted'));
-    return li;
-  }
-  if (p.kind === 'system') {
-    // FR-22: the page fills {deadline} in this viewer's local time.
-    li.append(el('p', p.deadline ? p.text.replace('{deadline}', shortTime(p.deadline)) : p.text, 'post-text'));
-    li.append(el('p', shortTime(p.createdAt), 'post-meta'));
-    return li;
-  }
-  const meta = el('p', undefined, 'post-meta');
-  meta.append(el('strong', p.teamName), document.createTextNode(` ${p.handle}, ${p.role}, ${shortTime(p.createdAt)}`));
-  li.append(meta);
-  if (p.kind === 'trade') {
-    const trade = el('p', undefined, 'trade-line');
-    trade.append(el('span', 'TRADE OFFER', 'trade-tag'), document.createTextNode(` Offering: ${p.offer}. Want: ${p.want}.`));
-    li.append(trade);
-  }
-  if (p.text) li.append(el('p', p.text, 'post-text'));
-  return li;
-}
-
-function renderQuad(posts) {
-  const list = $('quad');
-  list.replaceChildren(...(posts.length ? posts.map(postItem) : [el('li', 'No posts yet.', 'muted')]));
-}
-
-async function loadQuad() {
-  if (signing) return;
-  try {
-    const data = await api('/api/commons', { silent: true });
-    const json = JSON.stringify(data.posts);
-    if (json === lastQuad) return;
-    lastQuad = json;
-    renderQuad(data.posts);
-  } catch (_) {
-    // the room poll reports a lost session
-  }
-}
-
-$('chat-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  clearBanners();
-  try {
-    await api('/api/team/chat', { body: { text: $('chat-text').value } });
-  } catch (_) {
-    return;
-  }
-  $('chat-text').value = '';
-  lastJson = '';
-  await load();
-  $('chat').scrollTop = $('chat').scrollHeight;
-});
-
-function quadKind() {
-  return document.querySelector('input[name="quad-kind"]:checked').value;
-}
-for (const r of document.querySelectorAll('input[name="quad-kind"]')) {
-  r.addEventListener('change', () => ($('quad-trade').hidden = quadKind() !== 'trade'));
-}
-
-$('quad-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  clearBanners();
-  const kind = quadKind();
-  const payload = { kind, text: $('quad-text').value };
-  if (kind === 'trade') {
-    payload.offer = $('quad-offer').value;
-    payload.want = $('quad-want').value;
-  }
-  try {
-    await api('/api/commons', { body: payload });
-  } catch (_) {
-    return;
-  }
-  $('quad-text').value = '';
-  $('quad-offer').value = '';
-  $('quad-want').value = '';
-  lastQuad = '';
-  loadQuad();
-});
 
 // ---------- FAQ assistant (FR-25 to FR-27) ----------
 // The answer and the list live outside render(), so a poll never wipes them.
@@ -472,8 +366,4 @@ $('leave').addEventListener('click', async () => {
 });
 
 load();
-loadQuad();
-timer = setInterval(() => {
-  load();
-  loadQuad();
-}, 2000);
+timer = setInterval(load, 2000);

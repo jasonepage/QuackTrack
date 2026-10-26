@@ -1012,6 +1012,8 @@ a.small-button { display: inline-block; text-decoration: none; }
 .quad-form .small-button { justify-self: start; }
 .quad-trade { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
 .quad-item .team-actions { margin-top: 0.4rem; }
+/* /chat: team chat and The Quad side by side on a wide screen. */
+.chat-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 0 2rem; }
 
 /* ---------- Footer ---------- */
 .footer {

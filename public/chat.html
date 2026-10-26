@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat: QuackTrack</title>
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/api.js"></script>
+  <script src="/js/chat.js" defer></script>
+</head>
+<body>
+  <header class="topbar topbar-split">
+    <span class="wordmark">QuackTrack <span class="topbar-tag">Chat</span></span>
+    <a class="small-button" href="/room">Back to room</a>
+  </header>
+
+  <main class="wrap room">
+    <p id="no-session" class="after-action" hidden><a class="text-link" href="/team">Go to Team tap in</a></p>
+
+    <div id="chat-page" hidden>
+      <h1 id="team-name"></h1>
+
+      <section class="room-section">
+        <h2>Who is at the keyboard?</h2>
+        <div id="members" class="member-picker"></div>
+      </section>
+
+      <div class="chat-columns">
+        <section class="room-section">
+          <h2>Team chat</h2>
+          <p class="chat-rule">Only your team sees this chat in QuackTrack. The organizer runs the server, so never post passwords or keys.</p>
+          <ol id="chat" class="chat-list"></ol>
+          <form id="chat-form" class="faq-form" autocomplete="off" novalidate>
+            <label>Message <input id="chat-text" maxlength="500"></label>
+            <button class="small-button primary" type="submit">Send</button>
+          </form>
+          <p class="muted">Messages cannot be edited or deleted.</p>
+        </section>
+
+        <section class="room-section quad">
+          <h2>The Quad</h2>
+          <p class="muted">Every team sees The Quad.</p>
+          <form id="quad-form" class="quad-form" autocomplete="off" novalidate>
+            <div class="radio-row">
+              <label><input type="radio" name="quad-kind" value="chat" checked> Post</label>
+              <label><input type="radio" name="quad-kind" value="trade"> Trade offer</label>
+            </div>
+            <div id="quad-trade" class="quad-trade" hidden>
+              <label>Offering <input id="quad-offer" maxlength="80" placeholder="soldering iron"></label>
+              <label>Want <input id="quad-want" maxlength="80" placeholder="USB-C cable"></label>
+            </div>
+            <label>Post <input id="quad-text" maxlength="280"></label>
+            <button class="small-button primary" type="submit">Post</button>
+          </form>
+          <p class="muted">Posts cannot be edited. Only the organizer can remove a post.</p>
+          <ol id="quad" class="quad-list"></ol>
+        </section>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

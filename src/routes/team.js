@@ -13,7 +13,6 @@ const log = require('../log');
 const sessions = require('../sessions');
 const { keySourceText } = require('./enroll');
 const ai = require('../ai/askFAQ');
-const { teamChat } = require('./commons');
 
 const router = express.Router();
 
@@ -60,9 +59,6 @@ function roomView(team, session) {
     // FR-13 and FR-27: 'ai' when a provider is configured, else 'list'.
     faqMode: ai.providerName() === 'none' ? 'list' : 'ai',
     hasBundle: Boolean(store.event.bundle),
-    // FR-16: the newest 100 team chat messages, only to this team's session.
-    chat: teamChat(team.id),
-    muted: team.muted,
     notices,
   };
 }

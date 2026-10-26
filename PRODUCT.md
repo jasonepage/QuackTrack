@@ -44,14 +44,14 @@ Cookies remember, keys prove.
 
 Only the team's own session can open it. It shows:
 1. Team name, credential label ("Security key" or "Platform passkey"), key source, the deadline, and "Your key was replaced by organizer override." when that happened.
-2. "Who is at the keyboard?" selector listing the roster. Chat and commons posts need a selection.
+2. "Who is at the keyboard?" selector listing the roster. Chat, commons, and FAQ posts need a selection. The /chat page has the same selector.
 3. Revealed prompt (track and instructions) with a Download button, a sealed card with a "Tap to reveal" button, or "No prompt is assigned to Team Mallard yet."
 4. Roster with handles, display names, and roles.
-5. Team chat, newest at the bottom, each message showing handle, role, and time, under the lines "Only your team sees this chat in QuackTrack. The organizer runs the server, so never post passwords or keys." and "Messages cannot be edited or deleted."
+5. A "Team chat and The Quad" link to the /chat page (changed after T9: chat moved out of the room so the room stays short). /chat has the team chat, newest at the bottom, each message showing handle, role, and time, under the lines "Only your team sees this chat in QuackTrack. The organizer runs the server, so never post passwords or keys." and "Messages cannot be edited or deleted."
 6. Organizer board: notes and team secrets. Parked by cut line 1, not built in the window.
 7. FAQ assistant box, or the searchable event information list when no AI provider works.
 8. Submission form (project name, repo link, commit SHA, description, build declaration box) that becomes a locked signing panel with the short hash before the tap, or the receipt link after signing.
-9. The Quad (the public commons) in a side panel.
+9. The Quad (the public commons), on the /chat page beside the team chat.
 10. A "Leave room" button. On the shared host laptop in local mode the room also shows "Shared laptop: click Leave room when you are done."
 
 ## 6. The three ceremonies

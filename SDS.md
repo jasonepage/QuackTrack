@@ -257,7 +257,8 @@ Global rules for every endpoint:
 | POST /api/tap/options | team | Ceremony | `{teamId, purpose:"enter"}`, or `{teamId, purpose:"join", handle, displayName, role}` (D15); `"secret"` and `secretId` parked with T10 | `{ceremonyId, options}` | team exists and is not DRAFT; for `join`, team not SUBMITTED and the FR-04 rules | Tapping for a draft team; joining a team without its key |
 | POST /api/tap/verify | team | Ceremony | `{ceremonyId, response}` | `{team:{id,name}, notice, prompt\|null, secret\|null}` + `qt_team` | delete pending, `response.id` equals the team's ACTIVE credential, counter check, verify | Wrong key, replay, cloned key, cookie as identity |
 | POST /api/tap/client-failure | team page or console | Ceremony support | `{ceremonyId, errorName}` | `{ok}` | pending exists, errorName up to 40 chars | Log flooding (rate limit, existing ceremony required) |
-| GET /api/team/room | team | Read | none | room object (FR-13) including the newest 100 team chat messages | team session | Reading another team's room |
+| GET /api/team/room | team | Read | none | room object (FR-13) | team session | Reading another team's room |
+| GET /api/team/chat | team | Read | none | `{teamName, muted, member, roster:[{handle, role}], messages: newest 100}` for the /chat page | team session | Reading another team's chat |
 | POST /api/team/member | team | Read | `{handle}` | room object | handle on session team's roster | Speaking as another team's member |
 | GET /api/team/instructions.txt | team | Read | none | text attachment | team REVEALED or SUBMITTED | Downloading before reveal |
 | POST /api/team/logout | team | Read | `{}` | `{ok}` | team session | none |
@@ -561,7 +562,8 @@ How a human verifies the chain:
 | public/setup.html, public/js/setup.js | Organizer setup | Run without the token in the URL |
 | public/console.html, public/js/console.js | Console | Use innerHTML with data |
 | public/team.html, public/js/team.js | Team picker, tap in | Show prompt data |
-| public/room.html, public/js/room.js | Room, chat, commons, FAQ, sign form, `QT_TEST.tamperSign` | Use innerHTML with data |
+| public/room.html, public/js/room.js | Room, FAQ, sign form, `QT_TEST.tamperSign`, link to /chat | Use innerHTML with data |
+| public/chat.html, public/js/chat.js | /chat: who is at the keyboard, team chat, The Quad (changed after T9) | Use innerHTML with data |
 | public/receipt.html, public/js/receipt.js | Receipt and checks | Show the prompt |
 | public/js/api.js | `api()` wrapper, `showFail()`, `showNotice()`, ceremony helper | Swallow an error silently |
 | public/css/app.css | Styles, 32px fail banner | Set error text smaller |

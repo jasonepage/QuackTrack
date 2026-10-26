@@ -73,6 +73,23 @@ function teamChat(teamId) {
   return msgs.slice(-CHAT_READ).map(chatView);
 }
 
+// The /chat page: the team's name, mute flag, who is at the keyboard, the
+// roster handles to pick from, and the newest 100 messages. Read tier: the
+// team comes from the session only.
+router.get('/team/chat', sessions.requireTeam, query({}), (req, res) => {
+  const team = sessionTeam(req, res);
+  if (!team) return;
+  const member = sessionMember(req, team);
+  res.json({
+    ok: true,
+    teamName: team.name,
+    muted: team.muted,
+    member: member ? member.handle : null,
+    roster: team.roster.map((m) => ({ handle: m.handle, role: m.role })),
+    messages: teamChat(team.id),
+  });
+});
+
 const chatLimit = rateLimit((req) => [['chat', req.session.sid, 1, 1000]], 'CHAT_SLOW');
 
 router.post('/team/chat', sessions.requireTeam, body({ text: { type: 'string', label: 'Message', min: 1, max: 500 } }), (req, res, next) => {

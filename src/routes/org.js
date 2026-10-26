@@ -17,6 +17,7 @@ const sessions = require('../sessions');
 const wa = require('../webauthn');
 const { teamRows, getTeam, createDraftTeam } = require('./enroll');
 const ai = require('../ai/askFAQ');
+const { commonsFeed } = require('./commons');
 
 const router = express.Router();
 const ORG_ACTOR = Object.freeze({ kind: 'organizer', id: 'organizer' });
@@ -235,6 +236,8 @@ router.get('/console', sessions.requireOrg, query({}), (req, res) => {
     ai: ai.status(),
     // FR-24: the saved event information, so the form shows what teams see.
     bundle: { text: store.event.bundle, hash: store.event.bundleHash },
+    // FR-23: The Quad with moderation. Team chat text never reaches the console.
+    commons: commonsFeed(),
     prompts: [...store.prompts.values()]
       .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
       .map((p) => ({ id: p.id, track: p.track, deadline: p.deadline })),

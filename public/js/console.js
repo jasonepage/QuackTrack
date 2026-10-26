@@ -364,6 +364,11 @@ function teamCard(team) {
     card.append(facts);
     if (team.state === 'ENROLLED' && lastData.prompts.length) card.append(assignForm(team));
     card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
+    // FR-23: mute or unmute this team in The Quad.
+    const mute = el('div', undefined, 'team-actions');
+    if (team.muted) mute.append(el('span', 'Muted in The Quad', 'chip chip-red'));
+    mute.append(button(team.muted ? 'Unmute' : 'Mute in The Quad', 'link-button', () => moderate(`/api/org/teams/${encodeURIComponent(team.id)}/mute`, { muted: !team.muted })));
+    card.append(mute);
     if (team.state === 'ENROLLED' || team.state === 'REVEALED') card.append(replaceKeyBlock(team));
   }
   return card;
@@ -506,6 +511,7 @@ function render(data) {
 
   renderPrompts(data);
   renderFaq(data);
+  renderQuad(data);
 
   const teams = $('teams');
   teams.replaceChildren(...(data.teams.length ? data.teams.map(teamCard) : [el('p', 'No teams yet.', 'muted')]));
@@ -529,6 +535,53 @@ function render(data) {
     row.append(el('td', entry.seq), el('td', new Date(entry.ts).toLocaleTimeString()), el('td', undefined));
     row.lastChild.append(details);
     body.append(row);
+  }
+}
+
+// ---------- The Quad moderation (FR-23) ----------
+const shortTime = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+async function moderate(path, payload) {
+  try {
+    await api(path, { body: payload });
+  } catch (_) {
+    return;
+  }
+  clearBanners();
+  load();
+}
+
+function renderQuad(data) {
+  const list = $('quad-mod');
+  list.replaceChildren();
+  if (!data.commons.length) list.append(el('li', 'No posts yet.', 'muted'));
+  for (const p of data.commons) {
+    const li = el('li', undefined, 'quad-item' + (p.pinned ? ' pinned' : '') + (p.kind === 'system' ? ' system' : ''));
+    if (p.pinned) li.append(el('span', 'Pinned', 'chip'));
+    if (p.kind === 'removed') {
+      li.append(el('p', p.text, 'post-text muted'));
+    } else if (p.kind === 'system') {
+      li.append(el('p', p.deadline ? p.text.replace('{deadline}', shortTime(p.deadline)) : p.text, 'post-text'));
+    } else {
+      const meta = el('p', undefined, 'post-meta');
+      meta.append(el('strong', p.teamName), document.createTextNode(` ${p.handle}, ${p.role}, ${shortTime(p.createdAt)}`));
+      li.append(meta);
+      if (p.kind === 'trade') {
+        const t = el('p', undefined, 'trade-line');
+        t.append(el('span', 'TRADE OFFER', 'trade-tag'), document.createTextNode(` Offering: ${p.offer}. Want: ${p.want}.`));
+        li.append(t);
+      }
+      if (p.text) li.append(el('p', p.text, 'post-text'));
+    }
+    if (p.kind !== 'removed') {
+      const actions = el('div', undefined, 'team-actions');
+      actions.append(
+        button(p.pinned ? 'Unpin' : 'Pin', 'link-button', () => moderate(`/api/org/commons/${encodeURIComponent(p.id)}/pin`, { pinned: !p.pinned })),
+        button('Delete', 'link-button', () => moderate(`/api/org/commons/${encodeURIComponent(p.id)}/delete`, {}))
+      );
+      li.append(actions);
+    }
+    list.append(li);
   }
 }
 
@@ -629,6 +682,15 @@ function logSentence(entry, names, tracks) {
     case 'sign.failed': return `${team}'s signing tap failed: ${TAP_REASON[d.reason] || d.reason}.`;
     case 'submission.signed': return `${team} signed its submission. Hash ${short}.`;
     case 'demo.seeded': return 'Demo data was loaded.';
+    case 'chat.posted': return `${d.handle} posted in ${team}'s team chat.`;
+    case 'commons.posted': return `${d.handle} on ${team} posted ${d.kind === 'trade' ? 'a trade offer' : 'a message'} in The Quad.`;
+    case 'commons.pinned': return 'The organizer pinned a post in The Quad.';
+    case 'commons.unpinned': return 'The organizer unpinned a post in The Quad.';
+    case 'commons.deleted': return 'The organizer removed a post from The Quad.';
+    case 'team.muted': return `${team} was muted in The Quad.`;
+    case 'team.unmuted': return `${team} was unmuted in The Quad.`;
+    case 'deadline.warning': return `30 minutes left until the ${shortTime(d.deadline)} deadline.`;
+    case 'deadline.unsubmitted': return `${team} has not signed a submission. 10 minutes left.`;
     default: return entry.action;
   }
 }

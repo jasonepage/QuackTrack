@@ -978,6 +978,41 @@ a.small-button { display: inline-block; text-decoration: none; }
   font-weight: 800;
 }
 
+/* ---------- Team chat and The Quad (T9) ---------- */
+.chat-rule { margin: 0 0 0.5rem; font-weight: 700; }
+.chat-list,
+.quad-list {
+  max-width: 46rem;
+  margin: 0.5rem 0;
+  padding: 0;
+  list-style: none;
+}
+.chat-list { max-height: 24rem; overflow-y: auto; border: 2px solid var(--line); border-radius: 0.5rem; padding: 0.5rem 0.75rem; }
+.chat-item, .quad-item { padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+.quad-item { padding: 0.6rem 0.75rem; border: 2px solid var(--line); border-radius: 0.5rem; margin-bottom: 0.5rem; }
+.quad-item.pinned { border-color: var(--ink); }
+.quad-item.system { background: var(--soft); }
+.post-meta { margin: 0; font-size: 1rem; color: var(--muted); }
+.post-meta strong { color: var(--ink); }
+.post-text { margin: 0.15rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.trade-line { margin: 0.25rem 0 0; font-weight: 700; }
+.trade-tag {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border: 2px solid var(--ink);
+  border-radius: 0.375rem;
+  background: var(--yellow);
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+.quad-form { display: grid; gap: 0.6rem; max-width: 46rem; }
+.quad-form label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 1rem; font-weight: 700; }
+.quad-form .radio-row label { flex-direction: row; align-items: center; gap: 0.4rem; font-size: 1.125rem; }
+.quad-form input:not([type="radio"]) { padding: 0.6rem 0.75rem; border: 2px solid var(--ink); border-radius: 0.375rem; font: inherit; font-size: 1.125rem; font-weight: 400; }
+.quad-form .small-button { justify-self: start; }
+.quad-trade { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.quad-item .team-actions { margin-top: 0.4rem; }
+
 /* ---------- Footer ---------- */
 .footer {
   margin-top: 3.5rem;

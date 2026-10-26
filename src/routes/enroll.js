@@ -75,6 +75,7 @@ function teamRow(team) {
     missedDeadline: !sub && Boolean(prompt) && Date.now() >= Date.parse(prompt.deadline),
     // FR-41: `OVERRIDE lost` or `OVERRIDE broken` stays on the row until reset.
     overrideReason: team.lastOverride ? team.lastOverride.reason : null,
+    muted: team.muted,
   };
 }
 

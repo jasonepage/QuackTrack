@@ -99,7 +99,21 @@ function append(actor, action, data = {}) {
   const prev = store.log.length ? store.log[store.log.length - 1] : null;
   const entry = buildEntry(prev, actor, action, data);
   store.log.push(entry);
+  // Listeners (drama.js) read the finished entry. A listener failure is
+  // printed and never fails the request or the log.
+  for (const fn of listeners) {
+    try {
+      fn(entry);
+    } catch (err) {
+      console.error('[log] listener failed:', err.message);
+    }
+  }
   return entry;
+}
+
+const listeners = [];
+function onAppend(fn) {
+  listeners.push(fn);
 }
 
 // Verify a whole chain: for each entry i, seq === i, prevHash equals the
@@ -141,4 +155,4 @@ function chainStatus() {
   return verifyChain(store.log);
 }
 
-module.exports = { ZERO_HASH, ALLOWLIST, buildEntry, append, verifyChain, head, chainStatus };
+module.exports = { ZERO_HASH, ALLOWLIST, buildEntry, append, onAppend, verifyChain, head, chainStatus };

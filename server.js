@@ -17,6 +17,8 @@ const tap = require('./src/routes/tap');
 const team = require('./src/routes/team');
 const sign = require('./src/routes/sign');
 const faq = require('./src/routes/faq');
+const commons = require('./src/routes/commons');
+require('./src/drama'); // FR-22: system posts from the log, and the deadline timer
 
 // NFR-02 boot check: stop before listening if WebAuthn would refuse every tap.
 if (!config.rpIdMatchesOrigin()) {
@@ -89,6 +91,7 @@ app.use('/api/public', publicRoutes.router);
 app.use('/api/tap', tap.router);
 app.use('/api/team', team.router);
 app.use('/api/team', faq.router);
+app.use('/api', commons.router);
 app.use('/api/sign', sign.router);
 
 // FR-30 receipt page: the same static file for every receipt ID. The page

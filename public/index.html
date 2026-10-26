@@ -27,28 +27,146 @@
 
     <section class="wrap section" aria-labelledby="how">
       <h2 id="how">How it works</h2>
-      <ol class="steps">
-        <li class="step">
-          <svg class="step-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="15" cy="24" r="8" /><path d="M23 24h20M37 24v7M43 24v5" /></svg>
-          <span class="step-num">Step 1</span>
-          <h3>Check out a key</h3>
-          <p>The organizer hands your team a key, or you bring your own with approval.</p>
-          <p class="chips"><span class="chip chip-yellow">Key A: yellow tag</span> <span class="chip chip-blue">Key B: blue tag</span></p>
+      <p class="section-lede">A team's key is the team. Two taps carry the whole event: one to see the prompt, one to sign the work.</p>
+
+      <!-- The flow strip: inline SVG icons, UO colors, no outside files. -->
+      <ol class="flow" aria-label="The flow from key to receipt">
+        <li class="flow-step">
+          <svg class="flow-icon" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="22" cy="32" r="12" fill="#FEE11A" stroke="#111" stroke-width="3"/>
+            <circle cx="22" cy="32" r="4" fill="#111"/>
+            <path d="M34 32h22M50 32v8M56 32v6" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/>
+            <rect x="4" y="6" width="18" height="12" rx="3" fill="#FEE11A" stroke="#111" stroke-width="2.5"/>
+            <path d="M13 18v6" stroke="#111" stroke-width="2.5"/>
+          </svg>
+          <strong>1. Get a key</strong>
+          <span>The organizer hands your team a tagged key from the pool.</span>
         </li>
-        <li class="step">
-          <svg class="step-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="22" width="30" height="20" rx="3" /><path d="M16 22v-6a8 8 0 0 1 15.5-2.8" /><path d="M24 30v5" /></svg>
-          <span class="step-num">Step 2</span>
-          <h3>Tap to reveal</h3>
-          <p>Only your team's prompt appears, and the time is logged.</p>
+        <li class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 40 24"><path class="arrow-path" d="M2 12h30M24 4l8 8-8 8" fill="none" stroke="#007030" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+        <li class="flow-step">
+          <svg class="flow-icon" viewBox="0 0 64 64" aria-hidden="true">
+            <rect x="14" y="28" width="36" height="28" rx="4" fill="#fff" stroke="#111" stroke-width="3"/>
+            <path d="M22 28v-8a10 10 0 0 1 20 0" fill="none" stroke="#111" stroke-width="3"/>
+            <path class="tap-ring" d="M32 10a22 22 0 0 1 22 22" fill="none" stroke="#007030" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="32" cy="42" r="4" fill="#007030"/>
+          </svg>
+          <strong>2. Tap to reveal</strong>
+          <span>Your prompt is sealed until your key answers. The time is logged.</span>
         </li>
-        <li class="step">
-          <svg class="step-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 38c6-10 10-14 14-10s-2 9 4 9 8-8 14-8" /><path d="M14 14l6 6 14-14" /></svg>
-          <span class="step-num">Step 3</span>
-          <h3>Tap to sign</h3>
-          <p>Your submission is signed to its exact content. You get a receipt, and the console flips green.</p>
-          <p class="chips"><span class="chip chip-red">Not submitted</span> <span class="arrow" aria-hidden="true">&rarr;</span> <span class="chip chip-green">Submitted</span></p>
+        <li class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 40 24"><path class="arrow-path" d="M2 12h30M24 4l8 8-8 8" fill="none" stroke="#007030" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+        <li class="flow-step">
+          <svg class="flow-icon" viewBox="0 0 64 64" aria-hidden="true">
+            <rect x="8" y="10" width="48" height="44" rx="4" fill="#fff" stroke="#111" stroke-width="3"/>
+            <text x="32" y="37" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10.5" font-weight="800" fill="#007030">3fa2c9e1</text>
+            <path d="M14 46h36" stroke="#FEE11A" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+          <strong>3. Tap to sign</strong>
+          <span>The key signs the hash of your exact name, repo, commit, and description.</span>
+        </li>
+        <li class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 40 24"><path class="arrow-path" d="M2 12h30M24 4l8 8-8 8" fill="none" stroke="#007030" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+        <li class="flow-step">
+          <svg class="flow-icon" viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M14 6h28l10 10v42H14z" fill="#fff" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M42 6v10h10" fill="none" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M22 34l7 7 14-14" fill="none" stroke="#007030" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <strong>4. Receipt</strong>
+          <span>Anyone with the link sees three checks pass. No login.</span>
         </li>
       </ol>
+    </section>
+
+    <section class="wrap section" aria-labelledby="chain">
+      <h2 id="chain">Every action is chained</h2>
+      <p class="section-lede">Each log entry carries the hash of the entry before it. Edit one letter anywhere and every later link breaks. The organizer downloads the log and checks it with one command.</p>
+      <div class="chain-scroll">
+      <svg class="chain-graphic" viewBox="0 0 760 150" role="img" aria-labelledby="chain-title">
+        <title id="chain-title">Five chained log entries. The fourth was edited, so the chain is broken from there.</title>
+        <defs>
+          <marker id="chain-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#007030"/></marker>
+          <marker id="chain-arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b00020"/></marker>
+        </defs>
+        <g font-family="system-ui, -apple-system, Helvetica, Arial, sans-serif" font-size="14">
+          <g>
+            <rect x="10" y="30" width="120" height="70" rx="8" fill="#fff" stroke="#007030" stroke-width="3"/>
+            <text x="70" y="55" text-anchor="middle" font-weight="800" fill="#111">#12 enrolled</text>
+            <text x="70" y="80" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" fill="#007030">4c5e…d62d</text>
+          </g>
+          <path d="M132 65h36" stroke="#007030" stroke-width="3" marker-end="url(#chain-arrow)"/>
+          <g>
+            <rect x="170" y="30" width="120" height="70" rx="8" fill="#fff" stroke="#007030" stroke-width="3"/>
+            <text x="230" y="55" text-anchor="middle" font-weight="800" fill="#111">#13 revealed</text>
+            <text x="230" y="80" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" fill="#007030">9158…2034</text>
+          </g>
+          <path d="M292 65h36" stroke="#007030" stroke-width="3" marker-end="url(#chain-arrow)"/>
+          <g>
+            <rect x="330" y="30" width="120" height="70" rx="8" fill="#fff" stroke="#007030" stroke-width="3"/>
+            <text x="390" y="55" text-anchor="middle" font-weight="800" fill="#111">#14 signed</text>
+            <text x="390" y="80" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" fill="#007030">3fa2…c9e1</text>
+          </g>
+          <path d="M452 65h36" stroke="#b00020" stroke-width="3" stroke-dasharray="6 5" marker-end="url(#chain-arrow-red)"/>
+          <g>
+            <rect x="490" y="30" width="120" height="70" rx="8" fill="#fff" stroke="#b00020" stroke-width="3"/>
+            <text x="550" y="55" text-anchor="middle" font-weight="800" fill="#b00020">#15 edited</text>
+            <text x="550" y="80" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" fill="#b00020">????…????</text>
+          </g>
+          <path d="M612 65h36" stroke="#b00020" stroke-width="3" stroke-dasharray="6 5" marker-end="url(#chain-arrow-red)"/>
+          <g>
+            <rect x="650" y="30" width="100" height="70" rx="8" fill="#fff" stroke="#b00020" stroke-width="3"/>
+            <text x="700" y="55" text-anchor="middle" font-weight="800" fill="#b00020">#16</text>
+            <text x="700" y="80" text-anchor="middle" font-weight="700" fill="#b00020">BROKEN</text>
+          </g>
+          <text x="380" y="135" text-anchor="middle" font-weight="700" fill="#111">node scripts/verify-log.js quacktrack-log.json  →  Chain BROKEN at entry 15.</text>
+        </g>
+      </svg>
+      </div>
+    </section>
+
+    <section class="wrap section" aria-labelledby="cheat">
+      <h2 id="cheat">Why nobody can cheat</h2>
+      <ul class="proof-grid">
+        <li class="proof">
+          <svg class="proof-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="none" stroke="#b00020" stroke-width="4"/><path d="M15 15l18 18" stroke="#b00020" stroke-width="4" stroke-linecap="round"/><circle cx="19" cy="24" r="5" fill="#FEE11A" stroke="#111" stroke-width="2"/><path d="M24 24h10" stroke="#111" stroke-width="3" stroke-linecap="round"/></svg>
+          <h3>The wrong key is refused by the browser</h3>
+          <p>Each tap allows exactly one credential. Another team's key never reaches the server, and the attempt is logged anyway.</p>
+        </li>
+        <li class="proof">
+          <svg class="proof-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="20" width="32" height="22" rx="4" fill="#fff" stroke="#111" stroke-width="3"/><path d="M15 20v-6a9 9 0 0 1 18 0v6" fill="none" stroke="#111" stroke-width="3"/><text x="24" y="36" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" font-weight="800" fill="#007030">3fa2</text></svg>
+          <h3>A signature locks the exact content</h3>
+          <p>The signing challenge is built from the hash of the submission plus a fresh nonce. Change a character, or try again later, and it fails.</p>
+        </li>
+        <li class="proof">
+          <svg class="proof-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 24a14 14 0 1 1 4 10" fill="none" stroke="#111" stroke-width="3.5" stroke-linecap="round"/><path d="M8 36l6-2-2-6" fill="none" stroke="#111" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 16l16 16" stroke="#b00020" stroke-width="4" stroke-linecap="round"/></svg>
+          <h3>Replays die on arrival</h3>
+          <p>Every challenge is deleted before it is checked, so a captured request works zero times, even if the signature would have passed.</p>
+        </li>
+        <li class="proof">
+          <svg class="proof-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="18" width="14" height="12" rx="2" fill="#fff" stroke="#007030" stroke-width="3"/><rect x="28" y="18" width="14" height="12" rx="2" fill="#fff" stroke="#007030" stroke-width="3"/><path d="M20 24h8" stroke="#007030" stroke-width="3"/><path d="M13 10v8M35 30v8" stroke="#FEE11A" stroke-width="4" stroke-linecap="round"/></svg>
+          <h3>Nothing can be edited quietly</h3>
+          <p>No edits, no resubmission, no unsigned fallback. A lost key is replaced only by a ceremony that writes OVERRIDE everywhere.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="wrap section" aria-labelledby="who">
+      <h2 id="who">Who it is for</h2>
+      <ul class="who-grid">
+        <li class="who-card">
+          <h3>Organizers</h3>
+          <p>Buy a pool of keys once. The console tells you what to do next and counts submissions from across the room.</p>
+          <a class="text-link" href="/console">Open the console</a>
+        </li>
+        <li class="who-card">
+          <h3>Teams</h3>
+          <p>No account, no password. Pick your team, tap, build, tap again. Your room has your prompt, chat, and the event FAQ.</p>
+          <a class="text-link" href="/team">Team tap in</a>
+        </li>
+        <li class="who-card">
+          <h3>Judges</h3>
+          <p>Open any receipt link. Three checks run in front of you, and the commit link takes you to exactly what was signed.</p>
+          <a class="text-link" href="https://github.com/jasonepage/QuackTrack#the-three-ceremonies">Read how it is built</a>
+        </li>
+      </ul>
     </section>
 
     <section class="wrap section" aria-labelledby="store">

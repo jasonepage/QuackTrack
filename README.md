@@ -8,6 +8,7 @@
 
 <p align="center">
   Live: <a href="https://quacktrack-987o.onrender.com">quacktrack-987o.onrender.com</a> &middot;
+  Demo video: <a href="https://www.youtube.com/watch?v=JpW88ii5Obc">YouTube, 3 minutes</a> &middot;
   Built at MLH Hacktoberfest Hack Day Eugene x QuackHacks, October 25, 2026 &middot;
   MIT license
 </p>

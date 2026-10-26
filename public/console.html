@@ -21,7 +21,7 @@
   <main class="wrap console">
     <section id="login" class="doc" hidden>
       <h1>Organizer console</h1>
-      <p class="lede">Tap the organizer key or passkey to open the console.</p>
+      <p class="lede">Click the button, then use the same thing you set up with: Touch ID, your laptop password, or your organizer key.</p>
       <button id="login-button" class="action-button" type="button">Log in with key</button>
     </section>
 
@@ -33,49 +33,71 @@
         <span id="chain-badge" class="chain-badge"></span>
         <a id="glance-unanswered" class="glance-unanswered" href="#faq-section" hidden></a>
       </div>
-      <details class="chain-head">
-        <summary>Log head <code id="chain-head-short"></code></summary>
-        <code id="chain-head"></code>
-      </details>
-      <p id="memory-notice" class="notice-box"></p>
 
-      <!-- The demo path in order: teams, then the log tail. -->
-      <div class="console-bar">
-        <h2>Teams</h2>
-        <button id="seed" class="small-button" type="button">Load demo data</button>
+      <!-- Plain words about what to do now, worked out from the server state. -->
+      <div id="next-step" class="next-step" aria-live="polite">
+        <p class="next-step-label">Next step</p>
+        <p id="next-step-title" class="next-step-title"></p>
+        <p id="next-step-text" class="next-step-text"></p>
+        <details class="help-box">
+        <summary>First time with security keys? Read this.</summary>
+        <ol>
+          <li><strong>A security key is a small USB stick.</strong> Each team gets one. The key is the team: whoever holds it can see that team's prompt and sign for that team.</li>
+          <li><strong>To enroll a team,</strong> plug the key into this laptop, click <strong>Enroll with key</strong> on the team's card, and have the captain touch the gold circle on the key when it blinks.</li>
+          <li><strong>The browser may ask for a PIN.</strong> The captain picks one (at least 4 characters) and keeps it. A key that already has a PIN asks for that PIN.</li>
+          <li><strong>Wrong key?</strong> A red bar says so and nothing happens. Have them try again with their own key.</li>
+          <li><strong>Lost or broken key?</strong> Use <strong>Replace key</strong> on the team's card. You tap your own organizer key first, then the captain taps the new key. The word OVERRIDE shows everywhere so nobody can do it quietly.</li>
+          <li><strong>When a team is done,</strong> they tap in at the team page, tap once to see their prompt, and tap again to sign. Their card turns green.</li>
+        </ol>
+        </details>
       </div>
-      <form id="new-team" class="inline-form" autocomplete="off">
-        <label>Team name <input id="new-team-name" name="name" maxlength="40" required></label>
-        <label>Key type
-          <select id="new-team-mode" name="mode">
-            <option value="key">Security key</option>
-            <option value="passkey">Solo passkey</option>
-          </select>
-        </label>
-        <button class="small-button" type="submit">New team</button>
-      </form>
-      <div id="teams" class="team-list"></div>
 
-      <div class="console-bar">
-        <h2>Action log</h2>
-        <a class="small-button" href="/api/org/log.json" download="quacktrack-log.json">Download log</a>
-      </div>
-      <p class="muted">The last 20 entries, newest first. Open a line to see the raw entry.</p>
-      <div class="table-scroll">
-        <table class="log-table">
-          <thead><tr><th>#</th><th>Time</th><th>What happened</th></tr></thead>
-          <tbody id="log-rows"></tbody>
-        </table>
+      <div class="console-grid">
+        <div class="console-main">
+          <div class="console-bar">
+            <h2>Teams</h2>
+            <button id="seed" class="small-button" type="button">Load demo data</button>
+          </div>
+          <form id="new-team" class="inline-form" autocomplete="off">
+            <label>Team name <input id="new-team-name" name="name" maxlength="40" required placeholder="Team Heron"></label>
+            <label>Key type
+              <select id="new-team-mode" name="mode">
+                <option value="key">Security key</option>
+                <option value="passkey">Solo passkey</option>
+              </select>
+            </label>
+            <button class="small-button" type="submit">New team</button>
+          </form>
+          <div id="teams" class="team-list"></div>
+        </div>
+
+        <aside class="console-side">
+          <div class="console-bar">
+            <h2>Action log</h2>
+            <a class="small-button" href="/api/org/log.json" download="quacktrack-log.json">Download log</a>
+          </div>
+          <p class="muted">Newest first. Click a line to see the raw entry.</p>
+          <details class="chain-head">
+            <summary>Log head <code id="chain-head-short"></code></summary>
+            <code id="chain-head"></code>
+          </details>
+          <div class="table-scroll">
+            <table class="log-table">
+              <thead><tr><th>#</th><th>Time</th><th>What happened</th></tr></thead>
+              <tbody id="log-rows"></tbody>
+            </table>
+          </div>
+        </aside>
       </div>
 
       <div class="console-bar">
         <h2>Prompts</h2>
       </div>
-      <p class="muted">Make a prompt here, then assign it on a team's card above.</p>
+      <p class="muted">A prompt is the challenge a team sees after it taps its key. Make one here, then assign it on the team's card.</p>
       <form id="new-prompt" class="prompt-form" autocomplete="off">
-        <label>Track <input id="prompt-track" maxlength="60" required></label>
-        <label>Instructions <textarea id="prompt-instructions" maxlength="4000" rows="4" required></textarea></label>
-        <label>Deadline <input id="prompt-deadline" type="datetime-local" required></label>
+        <label>Track (a short title) <input id="prompt-track" maxlength="60" required placeholder="Duck Pond Sensors"></label>
+        <label>Instructions (what the team should build) <textarea id="prompt-instructions" maxlength="4000" rows="4" required></textarea></label>
+        <label>Deadline (submissions close at this time) <input id="prompt-deadline" type="datetime-local" required></label>
         <button class="small-button" type="submit">Create prompt</button>
       </form>
       <ul id="prompts" class="prompt-list"></ul>
@@ -84,11 +106,12 @@
         <h2>FAQ assistant</h2>
         <span id="ai-status" class="ai-status"></span>
       </div>
+      <p class="muted">Teams can ask questions in their room. The assistant answers only by quoting the event information you save here.</p>
       <h3>Questions it could not answer</h3>
       <p class="muted">Newest first. Answer these out loud.</p>
       <ul id="unanswered" class="unanswered"></ul>
       <form id="bundle-form" class="bundle-form" autocomplete="off" novalidate>
-        <label>Event information the assistant may quote (start each section with a line beginning "# ")
+        <label>Event information (schedule, rules, Wi-Fi, food). Start each section with a line beginning "# "
           <textarea id="bundle-text" rows="12" maxlength="30000" spellcheck="false"></textarea>
         </label>
         <button class="small-button" type="submit">Save event information</button>
@@ -97,12 +120,13 @@
       <div class="console-bar">
         <h2>The Quad</h2>
       </div>
-      <p class="muted">Pinned posts show first. Team chat is never shown here.</p>
+      <p class="muted">The public board every team sees. Pinned posts show first. Team chat is never shown here.</p>
       <ol id="quad-mod" class="quad-list"></ol>
 
       <div class="console-bar">
         <h2>Event</h2>
       </div>
+      <p id="memory-notice" class="notice-box"></p>
       <div class="event-actions">
         <form id="reset-form" class="reset-form" autocomplete="off">
           <p class="tag-rule">Reset also wipes which team holds which key. Write down the key list first.</p>

@@ -113,12 +113,23 @@ function showLogin() {
 }
 
 // ---------- Team rows ----------
+// A tag color no other team on the console holds yet, so each key looks
+// different on the table. Falls back to the first color.
+function freeTagColor() {
+  const used = new Set((lastData ? lastData.teams : []).filter((t) => t.tagColor).map((t) => t.tagColor.toLowerCase()));
+  const free = TAG_COLORS.find((c) => !used.has(c.name));
+  return (free || TAG_COLORS[0]).name;
+}
+
 function draftFor(team) {
   if (!keyDraft.has(team.id)) {
+    const keySource = team.keySource || (team.mode === 'key' ? 'pool' : 'own-passkey');
+    // The pool fields start filled in (next free label, an unused color), so
+    // the common case is one click. The organizer can still change them.
     keyDraft.set(team.id, {
-      keySource: team.keySource || (team.mode === 'key' ? 'pool' : 'own-passkey'),
-      tagColor: team.tagColor || '',
-      tagLabel: team.tagLabel || '',
+      keySource,
+      tagColor: team.tagColor || (keySource === 'pool' ? freeTagColor() : ''),
+      tagLabel: team.tagLabel || (keySource === 'pool' ? freePoolLabels(1)[0] || '' : ''),
       ownApproved: false,
     });
   }
@@ -131,7 +142,7 @@ function stateBadge(state) {
 
 function rosterList(team, editable) {
   const list = el('ul', undefined, 'roster');
-  if (!team.roster.length) list.append(el('li', team.state === 'DRAFT' ? 'No members yet. After enrolling, members join on /team with the team\'s key.' : 'No members yet. Members join on /team with the team\'s key.', 'muted'));
+  if (!team.roster.length) list.append(el('li', team.state === 'DRAFT' ? 'Nobody yet. After you enroll the key, members add themselves at the team page by tapping it.' : `Nobody yet. Members add themselves at ${location.origin}/team by tapping the team's key.`, 'muted'));
   for (const m of team.roster) {
     const item = el('li');
     item.append(el('strong', m.handle), document.createTextNode(` ${m.displayName}, ${m.role}`));
@@ -153,13 +164,25 @@ function rosterList(team, editable) {
   return list;
 }
 
+// The key fields on a draft row. The common case is one glance: the pool
+// fields are filled in already and only the two inputs and the tag rule
+// show. "More key choices" opens the own key choice and the preset chips.
 function keySourceBlock(team, d = draftFor(team), radioPrefix = 'ks-') {
   const box = el('div', undefined, 'key-source');
-  box.append(el('h4', 'Key source'));
-
+  const head = el('div', undefined, 'key-source-head');
+  const SOURCE_TEXT = { pool: 'Pool key (one of ours)', 'own-key': "Team's own key", 'own-passkey': 'Own passkey' };
   if (team.mode === 'key') {
+    head.append(el('strong', SOURCE_TEXT[d.keySource] || 'Pool key'));
+    head.append(button(d.more ? 'Fewer key choices' : 'More key choices', 'link-button', () => { d.more = !d.more; render(lastData); }));
+  } else {
+    d.keySource = 'own-passkey';
+    head.append(el('strong', 'Own passkey'));
+  }
+  box.append(head);
+
+  if (team.mode === 'key' && d.more) {
     const choices = el('div', undefined, 'radio-row');
-    for (const [value, text] of [['pool', 'Pool key'], ["own-key", "Team's own key"]]) {
+    for (const [value, text] of [['pool', 'Pool key (one of ours)'], ["own-key", "Team's own key"]]) {
       const input = document.createElement('input');
       input.type = 'radio';
       input.name = radioPrefix + team.id;
@@ -167,6 +190,10 @@ function keySourceBlock(team, d = draftFor(team), radioPrefix = 'ks-') {
       input.checked = d.keySource === value;
       input.addEventListener('change', () => {
         d.keySource = value;
+        if (value === 'pool') {
+          if (!d.tagColor) d.tagColor = freeTagColor();
+          if (!d.tagLabel) d.tagLabel = freePoolLabels(1)[0] || '';
+        }
         render(lastData);
       });
       const label = el('label');
@@ -174,9 +201,6 @@ function keySourceBlock(team, d = draftFor(team), radioPrefix = 'ks-') {
       choices.append(label);
     }
     box.append(choices);
-  } else {
-    d.keySource = 'own-passkey';
-    box.append(el('p', 'Own passkey'));
   }
 
   if (d.keySource === 'pool') {
@@ -199,9 +223,11 @@ function keySourceBlock(team, d = draftFor(team), radioPrefix = 'ks-') {
     });
     const row = el('div', undefined, 'preset-fields');
     const colorCol = el('div');
-    colorCol.append(field('Tag color', color), colorPresets);
+    colorCol.append(field('Tag color', color));
+    if (d.more) colorCol.append(colorPresets);
     const labelCol = el('div');
-    labelCol.append(field('Pool label', label), labelPresets);
+    labelCol.append(field('Pool label', label));
+    if (d.more) labelCol.append(labelPresets);
     row.append(colorCol, labelCol);
     box.append(row);
   } else {
@@ -268,7 +294,7 @@ function assignForm(team) {
   }
   const go = el('button', team.assignedPromptId ? 'Reassign' : 'Assign', 'small-button');
   go.type = 'submit';
-  form.append(field('Prompt', select), go);
+  form.append(field(team.assignedPromptId ? 'Prompt' : 'Give this team a prompt', select), go);
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -288,32 +314,34 @@ function renderPrompts(data) {
   if (!data.prompts.length) list.append(el('li', 'No prompts yet.', 'muted'));
   for (const p of data.prompts) {
     const li = el('li');
-    li.append(el('strong', p.track), document.createTextNode(' due ' + new Date(p.deadline).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })));
+    const holders = data.teams.filter((t) => t.assignedPromptId === p.id).map((t) => t.name);
+    li.append(el('strong', p.track), document.createTextNode(' due ' + new Date(p.deadline).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' }) + (holders.length ? `. Assigned to ${holders.join(', ')}.` : '. Not assigned yet.')));
     list.append(li);
   }
 }
 
+const shortClock = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
 function teamCard(team) {
-  const card = el('article', undefined, 'team-card');
+  const card = el('article', undefined, 'team-card team-' + team.state.toLowerCase());
   const head = el('div', undefined, 'team-head');
   head.append(stateBadge(team.state), el('h3', team.name));
-  head.append(el('span', team.mode === 'key' ? 'Security key mode' : 'Solo passkey mode', 'muted'));
   // FR-41 and FR-39: black on orange, until reset.
   if (team.overrideReason) head.append(el('span', `OVERRIDE ${team.overrideReason}`, 'override-tag'));
   card.append(head);
 
   if (team.state === 'DRAFT') {
-    const draftFacts = el('dl', undefined, 'facts');
-    draftFacts.append(el('dt', 'Key type'), el('dd', 'Not enrolled'));
-    card.append(draftFacts);
+    card.append(el('p', team.mode === 'key' ? 'No key yet. Hand the captain a key, then enroll it here.' : 'No passkey yet. The solo hacker enrolls it here with Touch ID, Face ID, or their phone.', 'card-hint'));
     if (team.roster.length) card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
     card.append(keySourceBlock(team));
-    const actions = el('div', undefined, 'team-actions');
+    const actions = el('div', undefined, 'team-actions enroll-actions');
     if (tappingTeamId === team.id) {
+      // FR-38 enroll moment: at least 32px, with what to do in plain words.
       actions.append(el('p', 'Tap the key now', 'tap-now'));
+      actions.append(el('p', team.mode === 'key' ? 'The captain touches the gold circle on the key when it blinks. If the browser asks for a PIN, the captain types one.' : 'The solo hacker follows the prompt on screen.', 'card-hint'));
     } else {
       actions.append(
-        button('Enroll with key', 'small-button primary', () => enroll(team)),
+        button('Enroll with key', 'small-button primary enroll-button', () => enroll(team)),
         button('Delete team', 'link-button', async () => {
           try {
             await api(`/api/org/teams/${encodeURIComponent(team.id)}`, { method: 'DELETE' });
@@ -327,53 +355,59 @@ function teamCard(team) {
       );
     }
     card.append(actions);
-  } else {
-    const facts = el('dl', undefined, 'facts');
-    for (const [k, v] of [['Key type', team.label], ['Which key', team.keySourceText], ['Fingerprint', team.fingerprint]]) {
-      facts.append(el('dt', k), el('dd', v || ''));
-    }
-    facts.append(el('dt', 'Prompt'), el('dd', team.assignedTrack || 'None assigned'));
-    if (team.assignedTrack) {
-      const status = el('dd');
-      status.append(
-        team.revealedAt
-          ? el('span', 'Revealed ' + new Date(team.revealedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), 'chip chip-green')
-          : el('span', 'Not revealed', 'chip chip-red')
-      );
-      facts.append(el('dt', 'Revealed'), status);
-    }
-    // FR-31 submission columns and FR-32 owner check (T6). Words on every chip.
-    const submitted = el('dd');
-    submitted.append(
-      team.submittedAt
-        ? el('span', 'Submitted ' + new Date(team.submittedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), 'chip chip-green')
-        : el('span', 'Not submitted', 'chip chip-red')
+    return card;
+  }
+
+  // Enrolled and later: one quiet line for the key, then the prompt and the
+  // two state chips on one row (FR-31, FR-39). Words on every chip.
+  const keyLine = el('p', undefined, 'key-line');
+  keyLine.append(el('span', team.label), el('span', ' · '), el('span', team.keySourceText || ''), el('span', ' · '), el('span', team.fingerprint || '', 'mono'));
+  card.append(keyLine);
+
+  const status = el('div', undefined, 'status-row');
+  if (team.assignedTrack) {
+    const prompt = el('span', undefined, 'status-prompt');
+    prompt.append(el('span', 'Prompt: ', 'muted'), el('strong', team.assignedTrack));
+    status.append(prompt);
+    status.append(
+      team.revealedAt
+        ? el('span', 'Revealed ' + shortClock(team.revealedAt), 'chip chip-green')
+        : el('span', 'Not revealed', 'chip chip-red')
     );
-    if (!team.submittedAt && team.missedDeadline) {
-      submitted.replaceChildren(el('span', 'Missed deadline', 'chip chip-red'));
-    }
-    facts.append(el('dt', 'Submitted'), submitted);
-    if (team.submittedAt) {
-      facts.append(el('dt', 'Hash'), el('dd', team.shortHash, 'hash-cell'));
-      facts.append(el('dt', 'Commit'), el('dd', team.commitShort, 'hash-cell'));
-      const owner = el('dd');
-      const [text, cls] = OWNER_CHECK[team.ownerCheck] || OWNER_CHECK.notgithub;
-      owner.append(el('span', text, 'chip ' + cls));
-      facts.append(el('dt', 'Repo owner'), owner);
-    }
-    card.append(facts);
-    if (team.state === 'ENROLLED' && lastData.prompts.length) card.append(assignForm(team));
-    card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
-    // FR-23 mute and FR-41 Replace key share one row, so the card stays short.
-    const actions = el('div', undefined, 'team-actions');
-    if (team.muted) actions.append(el('span', 'Muted in The Quad', 'chip chip-red'));
-    actions.append(button(team.muted ? 'Unmute' : 'Mute in The Quad', 'link-button', () => moderate(`/api/org/teams/${encodeURIComponent(team.id)}/mute`, { muted: !team.muted })));
-    card.append(actions);
-    if (team.state === 'ENROLLED' || team.state === 'REVEALED') {
-      const [opener, panel] = replaceKeyBlock(team);
-      if (opener) actions.append(opener);
-      if (panel) card.append(panel);
-    }
+  } else {
+    status.append(el('span', 'No prompt yet', 'status-prompt muted'));
+  }
+  let submitted;
+  if (team.submittedAt) submitted = el('span', 'Submitted ' + shortClock(team.submittedAt), 'chip chip-green');
+  else if (team.missedDeadline) submitted = el('span', 'Missed deadline', 'chip chip-red');
+  else submitted = el('span', 'Not submitted', 'chip chip-red');
+  status.append(submitted);
+  card.append(status);
+
+  if (team.submittedAt) {
+    // FR-31 submission columns and FR-32 owner check (T6).
+    const sub = el('p', undefined, 'key-line');
+    const [text, cls] = OWNER_CHECK[team.ownerCheck] || OWNER_CHECK.notgithub;
+    sub.append(el('span', 'Hash ', 'muted'), el('span', team.shortHash, 'hash-cell'), el('span', ' · '), el('span', 'Commit ', 'muted'), el('span', team.commitShort, 'hash-cell'), el('span', ' · '), el('span', text, 'chip ' + cls));
+    card.append(sub);
+  }
+
+  if (team.state === 'ENROLLED') {
+    if (lastData.prompts.length) card.append(assignForm(team));
+    else card.append(el('p', 'Make a prompt under Prompts below, then assign it here.', 'card-hint'));
+  }
+
+  card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
+
+  // Rare actions stay small at the bottom: FR-23 mute and FR-41 Replace key.
+  const actions = el('div', undefined, 'team-actions rare-actions');
+  if (team.muted) actions.append(el('span', 'Muted in The Quad', 'chip chip-red'));
+  actions.append(button(team.muted ? 'Unmute' : 'Mute in The Quad', 'link-button', () => moderate(`/api/org/teams/${encodeURIComponent(team.id)}/mute`, { muted: !team.muted })));
+  card.append(actions);
+  if (team.state === 'ENROLLED' || team.state === 'REVEALED') {
+    const [opener, panel] = replaceKeyBlock(team);
+    if (opener) actions.append(opener);
+    if (panel) card.append(panel);
   }
   return card;
 }
@@ -386,7 +420,7 @@ let overrideStep = null; // { teamId, step: 'org' | 'key' } while a tap is open
 
 function overrideDraftFor(team) {
   if (!overrideDraft.has(team.id)) {
-    overrideDraft.set(team.id, { reason: 'lost', confirm: '', keySource: team.mode === 'key' ? 'pool' : 'own-passkey', tagColor: '', tagLabel: '', ownApproved: false });
+    overrideDraft.set(team.id, { reason: 'lost', confirm: '', keySource: team.mode === 'key' ? 'pool' : 'own-passkey', tagColor: team.mode === 'key' ? freeTagColor() : '', tagLabel: team.mode === 'key' ? freePoolLabels(1)[0] || '' : '', ownApproved: false, more: true });
   }
   return overrideDraft.get(team.id);
 }
@@ -520,6 +554,7 @@ function render(data) {
   $('chain-head').textContent = head;
   $('memory-notice').textContent = data.notice;
 
+  renderNextStep(data);
   renderPrompts(data);
   renderFaq(data);
   renderQuad(data);
@@ -547,6 +582,41 @@ function render(data) {
     row.lastChild.append(details);
     body.append(row);
   }
+}
+
+// ---------- Next step: plain words worked out from the server state ----------
+function plural(n, one, many) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+function nextStep(data) {
+  const teams = data.teams;
+  const teamUrl = `${location.origin}/team`;
+  if (!teams.length) {
+    return ['Add your teams', 'Type a team name and click New team, once per team. To try QuackTrack with sample data first, click Load demo data.'];
+  }
+  const drafts = teams.filter((t) => t.state === 'DRAFT');
+  if (drafts.length) {
+    return [`Enroll ${plural(drafts.length, 'key', 'keys')}`, `${drafts.map((t) => t.name).join(' and ')} ${drafts.length === 1 ? 'has' : 'have'} no key yet. Hand the captain a key, click Enroll with key on the team's card, and have them touch the key when the browser asks.`];
+  }
+  if (!data.prompts.length) {
+    return ['Make a prompt', 'Scroll to Prompts, fill in the track, the instructions, and the deadline, then click Create prompt.'];
+  }
+  const unassigned = teams.filter((t) => t.state === 'ENROLLED' && !t.assignedTrack);
+  if (unassigned.length) {
+    return [`Give ${plural(unassigned.length, 'team', 'teams')} a prompt`, `${unassigned.map((t) => t.name).join(' and ')} ${unassigned.length === 1 ? 'has' : 'have'} no prompt. Pick one on the team's card and click Assign.`];
+  }
+  const waiting = teams.filter((t) => t.state !== 'SUBMITTED');
+  if (waiting.length) {
+    return ['Teams tap in and sign', `Teams open ${teamUrl}, pick their team, and tap their key to see their prompt. When they are done they tap again to sign. ${plural(waiting.length, 'team has', 'teams have')} not signed yet. Watch the cards turn green.`];
+  }
+  return ['Every team has signed', 'Click Download log to keep the record, then collect the pool keys at the desk.'];
+}
+
+function renderNextStep(data) {
+  const [title, text] = nextStep(data);
+  $('next-step-title').textContent = title;
+  $('next-step-text').textContent = text;
 }
 
 // ---------- The Quad moderation (FR-23) ----------

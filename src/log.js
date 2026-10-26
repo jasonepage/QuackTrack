@@ -13,7 +13,6 @@ const { canon, sha256hex, utf8 } = require('./canon');
 const ZERO_HASH = '0'.repeat(64);
 
 // SDS.md section 8 allowlist. Left out on purpose:
-//   team.override: added by T11 (SDS.md section 12, T11 build list).
 //   note.posted, secret.issued, secret.revealed: T10, cut by cut line 1.
 const ALLOWLIST = Object.freeze({
   'event.created': [],
@@ -26,6 +25,7 @@ const ALLOWLIST = Object.freeze({
   'roster.removed': ['teamId', 'handle'],
   'roster.joined': ['teamId', 'handle', 'role', 'credentialId'],
   'team.enrolled': ['teamId', 'teamName', 'credentialId', 'label', 'rosterHash', 'keySource', 'tagColor', 'tagLabel', 'keyFingerprint'],
+  'team.override': ['teamId', 'teamName', 'oldCredentialId', 'credentialId', 'label', 'keySource', 'tagColor', 'tagLabel', 'keyFingerprint', 'reason', 'rosterHash'],
   'prompt.created': ['promptId', 'deadline'],
   'prompt.assigned': ['teamId', 'promptId'],
   'tap.ok': ['teamId', 'purpose', 'credentialId', 'counter'],

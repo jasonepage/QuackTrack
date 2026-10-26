@@ -153,8 +153,7 @@ function rosterList(team, editable) {
   return list;
 }
 
-function keySourceBlock(team) {
-  const d = draftFor(team);
+function keySourceBlock(team, d = draftFor(team), radioPrefix = 'ks-') {
   const box = el('div', undefined, 'key-source');
   box.append(el('h4', 'Key source'));
 
@@ -163,7 +162,7 @@ function keySourceBlock(team) {
     for (const [value, text] of [['pool', 'Pool key'], ["own-key", "Team's own key"]]) {
       const input = document.createElement('input');
       input.type = 'radio';
-      input.name = 'ks-' + team.id;
+      input.name = radioPrefix + team.id;
       input.value = value;
       input.checked = d.keySource === value;
       input.addEventListener('change', () => {
@@ -299,6 +298,8 @@ function teamCard(team) {
   const head = el('div', undefined, 'team-head');
   head.append(stateBadge(team.state), el('h3', team.name));
   head.append(el('span', team.mode === 'key' ? 'Security key mode' : 'Solo passkey mode', 'muted'));
+  // FR-41 and FR-39: black on orange, until reset.
+  if (team.overrideReason) head.append(el('span', `OVERRIDE ${team.overrideReason}`, 'override-tag'));
   card.append(head);
 
   if (team.state === 'DRAFT') {
@@ -363,8 +364,117 @@ function teamCard(team) {
     card.append(facts);
     if (team.state === 'ENROLLED' && lastData.prompts.length) card.append(assignForm(team));
     card.append(el('h4', 'Roster', 'roster-head'), rosterList(team, true));
+    if (team.state === 'ENROLLED' || team.state === 'REVEALED') card.append(replaceKeyBlock(team));
   }
   return card;
+}
+
+// ---------- FR-41 Replace key (OVERRIDE) ----------
+// Panel state lives in memory so a poll does not close it or wipe typing.
+const replaceOpen = new Set();
+const overrideDraft = new Map();
+let overrideStep = null; // { teamId, step: 'org' | 'key' } while a tap is open
+
+function overrideDraftFor(team) {
+  if (!overrideDraft.has(team.id)) {
+    overrideDraft.set(team.id, { reason: 'lost', confirm: '', keySource: team.mode === 'key' ? 'pool' : 'own-passkey', tagColor: '', tagLabel: '', ownApproved: false });
+  }
+  return overrideDraft.get(team.id);
+}
+
+function replaceKeyBlock(team) {
+  const box = el('div', undefined, 'replace-key');
+  if (overrideStep && overrideStep.teamId === team.id) {
+    box.append(el('p', overrideStep.step === 'org' ? 'OVERRIDE: tap the organizer key now' : 'OVERRIDE: tap the replacement key now', 'tap-now'));
+    return box;
+  }
+  if (!replaceOpen.has(team.id)) {
+    box.append(button('Replace key', 'link-button', () => { replaceOpen.add(team.id); render(lastData); }));
+    return box;
+  }
+  const d = overrideDraftFor(team);
+  box.append(el('h4', 'OVERRIDE: replace a lost or broken key', 'override-head'));
+  const reasons = el('div', undefined, 'radio-row');
+  for (const r of ['lost', 'broken']) {
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'or-' + team.id;
+    input.value = r;
+    input.checked = d.reason === r;
+    input.addEventListener('change', () => (d.reason = r));
+    const label = el('label');
+    label.append(input, document.createTextNode(' Key ' + r));
+    reasons.append(label);
+  }
+  box.append(reasons, keySourceBlock(team, d, 'oks-'));
+  const confirm = textInput(d.confirm, 8);
+  confirm.addEventListener('input', () => (d.confirm = confirm.value));
+  const actions = el('div', undefined, 'team-actions');
+  actions.append(
+    field('Type OVERRIDE to confirm', confirm),
+    button('Replace key', 'small-button override-button', () => replaceKey(team)),
+    button('Close', 'link-button', () => { replaceOpen.delete(team.id); render(lastData); })
+  );
+  box.append(actions);
+  return box;
+}
+
+async function replaceKey(team) {
+  const d = overrideDraftFor(team);
+  clearBanners();
+  const payload = { teamId: team.id, reason: d.reason, confirm: d.confirm, keySource: d.keySource };
+  if (d.keySource === 'pool') {
+    payload.tagColor = d.tagColor;
+    payload.tagLabel = d.tagLabel;
+  } else {
+    payload.ownApproved = d.ownApproved;
+  }
+  const show = (step) => { overrideStep = step ? { teamId: team.id, step } : null; render(lastData); };
+  let start;
+  try {
+    start = await api('/api/org/override/options', { body: payload });
+  } catch (_) {
+    return;
+  }
+  // Tap 1: the organizer credential (SDS.md 5.6 step 2).
+  show('org');
+  let assertion;
+  try {
+    assertion = await startAuthentication({ optionsJSON: start.options });
+  } catch (err) {
+    show(null);
+    reportTapFailure(start.ceremonyId, err);
+    showFail(QT_BANNER.ORG_TAP_CANCELLED); // E16
+    return;
+  }
+  let second;
+  try {
+    second = await api('/api/org/override/authorize', { body: { ceremonyId: start.ceremonyId, response: assertion } });
+  } catch (_) {
+    show(null);
+    return;
+  }
+  // Tap 2: the replacement key (step 4).
+  show('key');
+  let attestation;
+  try {
+    attestation = await startRegistration({ optionsJSON: second.options });
+  } catch (err) {
+    show(null);
+    reportTapFailure(second.ceremonyId, err);
+    showFail(err && err.name === 'InvalidStateError' ? QT_BANNER.KEY_TAKEN : qtFill(QT_BANNER.OVERRIDE_CANCELLED, { team: team.name }));
+    return;
+  }
+  try {
+    await api('/api/org/override/verify', { body: { ceremonyId: second.ceremonyId, response: attestation } });
+    replaceOpen.delete(team.id);
+    overrideDraft.delete(team.id);
+  } catch (_) {
+    // the banner shows the server's sentence
+  } finally {
+    show(null);
+  }
+  load();
 }
 
 // ---------- Whole page ----------
@@ -412,7 +522,10 @@ function render(data) {
       if (details.open) openEntries.add(entry.entryHash);
       else openEntries.delete(entry.entryHash);
     });
-    details.append(el('summary', logSentence(entry, names, tracks)), el('pre', JSON.stringify(entry, null, 2), 'log-data'));
+    const summary = el('summary');
+    if (entry.action === 'team.override') summary.append(el('span', 'OVERRIDE', 'override-tag'), document.createTextNode(' '));
+    summary.append(document.createTextNode(logSentence(entry, names, tracks)));
+    details.append(summary, el('pre', JSON.stringify(entry, null, 2), 'log-data'));
     row.append(el('td', entry.seq), el('td', new Date(entry.ts).toLocaleTimeString()), el('td', undefined));
     row.lastChild.append(details);
     body.append(row);
@@ -497,11 +610,13 @@ function logSentence(entry, names, tracks) {
     case 'roster.removed': return `${d.handle} was removed from ${team}.`;
     case 'roster.joined': return `${d.handle} joined ${team} as ${d.role}.`;
     case 'team.enrolled': return `${team} enrolled with ${keyText(d)}.`;
+    case 'team.override': return `The organizer replaced ${team}'s key (${d.reason}). New key: ${keyText(d)}.`; // shown after a black on orange OVERRIDE tag
     case 'prompt.created': return `The prompt ${track} was created.`;
     case 'prompt.assigned': return `${track} was assigned to ${team}.`;
     case 'prompt.revealed': return `${team} revealed its prompt.`;
     case 'tap.ok': return d.purpose === 'join' ? `${team} tapped its key to add a member.` : `${team} tapped in with its key.`;
-    case 'tap.failed': return `A tap for ${team} was refused: ${TAP_REASON[d.reason] || d.reason}.`;
+    case 'tap.failed':
+      return `${d.purpose === 'override' ? 'An organizer override tap' : 'A tap'} for ${team} was refused: ${TAP_REASON[d.reason] || d.reason}.`;
     case 'tap.client_failed':
       return `The browser stopped a ${TAP_KIND[d.kind] || d.kind} tap for ${d.teamId ? team : 'the organizer'} (${d.errorName}).`;
     case 'tap.counter_regression':

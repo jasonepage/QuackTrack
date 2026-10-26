@@ -1,7 +1,7 @@
 'use strict';
 // src/routes/enroll.js: draft teams, roster edits, key source, and the
 // Enroll ceremony (SRS.md FR-03, FR-04, FR-05, FR-06, FR-40).
-// The override ceremony (FR-41) is added here by T11.
+// and the OVERRIDE ceremony that replaces a lost or broken key (FR-41, T11).
 // Every route needs the organizer session. A roster never changes after
 // enrollment (INV-12).
 
@@ -73,6 +73,8 @@ function teamRow(team) {
     ownerCheck: sub ? sub.ownerCheck : null,
     // FR-31: red "Missed deadline" once the team's deadline passes unsigned.
     missedDeadline: !sub && Boolean(prompt) && Date.now() >= Date.parse(prompt.deadline),
+    // FR-41: `OVERRIDE lost` or `OVERRIDE broken` stays on the row until reset.
+    overrideReason: team.lastOverride ? team.lastOverride.reason : null,
   };
 }
 
@@ -268,6 +270,198 @@ router.post(
     team.keySource = k.keySource;
     team.tagColor = k.tagColor;
     team.tagLabel = k.tagLabel;
+    res.json({ ok: true, team: teamRow(team) });
+  }
+);
+
+// ---------- FR-41 Key override (SDS.md 5.6, 6.8, D13) ----------
+// Two chained ceremonies: the organizer taps the organizer credential, with
+// a challenge bound to the team, its old credential, and the reason; then
+// the captain taps the replacement key, with a challenge bound to the
+// team's stored roster hash and that authorization. The organizer cookie
+// alone can never replace a key (L1). The old credential becomes REVOKED
+// and stays stored, so it stays unique and excluded (L3).
+
+function organizerCredential() {
+  for (const c of store.credentials.values()) if (c.ownerKind === 'organizer' && c.state === 'ACTIVE') return c;
+  return null;
+}
+
+// State checks shared by options and verify. Returns { code, vars } or null.
+function overrideStateProblem(team) {
+  if (team.state === 'DRAFT') return { code: 'NOT_ENROLLED', vars: { team: team.name } };
+  if (team.state === 'SUBMITTED') return { code: 'OVERRIDE_NOT_NEEDED', vars: { team: team.name } };
+  if (team.state !== 'ENROLLED' && team.state !== 'REVEALED') return { code: 'NOT_ENROLLED', vars: { team: team.name } };
+  return null;
+}
+
+router.post(
+  '/override/options',
+  sessions.requireOrg,
+  orgCeremonyLimit,
+  body({
+    teamId: { type: 'string', label: 'Team', min: 1, max: 40 },
+    reason: { type: 'string', label: 'Reason', oneOf: ['lost', 'broken'] },
+    confirm: { type: 'string', label: 'Confirm text', required: false },
+    keySource: { type: 'string', label: 'Key source', oneOf: ['pool', 'own-key', 'own-passkey'] },
+    tagColor: { type: 'string', label: 'Tag color', required: false },
+    tagLabel: { type: 'string', label: 'Pool label', required: false },
+    ownApproved: { type: 'boolean', label: 'Approval box', required: false },
+  }),
+  async (req, res) => {
+    const b = req.body;
+    const team = getTeam(b.teamId);
+    if (!team) return failWith(res, 'TEAM_NOT_FOUND');
+    if (b.confirm !== 'OVERRIDE') return failWith(res, 'OVERRIDE_CONFIRM');
+    const problem = overrideStateProblem(team);
+    if (problem) return failWith(res, problem.code, problem.vars);
+    const source = checkKeySource(team, b);
+    if (source.code) return failWith(res, source.code, source.vars);
+    const org = organizerCredential();
+    if (!org) return failWith(res, 'NO_ORGANIZER');
+
+    const oHash = canon.overrideHash(team.id, team.credentialId, b.reason); // 6.8 step 1
+    const nonce = crypto.randomBytes(32);
+    const challenge = canon.overrideAuthChallenge(oHash, nonce); // 6.8 step 2
+    const uv = org.label === 'Organizer key' ? 'discouraged' : 'preferred';
+    const options = await wa.authenticationOptions(org, uv, challenge); // organizer credential only
+    const rec = wa.newPending('override-auth', {
+      teamId: team.id,
+      challenge: canon.b64u(challenge),
+      nonce,
+      overrideHash: oHash.toString('hex'),
+      reason: b.reason,
+      keyFields: source.keyFields,
+    });
+    res.json({ ok: true, ceremonyId: rec.id, options });
+  }
+);
+
+router.post(
+  '/override/authorize',
+  sessions.requireOrg,
+  body({
+    ceremonyId: { type: 'string', label: 'Ceremony ID', min: 1, max: 64 },
+    response: { type: 'object', label: 'Key response' },
+  }),
+  async (req, res) => {
+    const taken = wa.takePending(req.body.ceremonyId, 'override-auth'); // deleted before verify (L4)
+    if (!taken.rec) return failWith(res, 'OVERRIDE_EXPIRED');
+    const rec = taken.rec;
+    const team = store.teams.get(rec.teamId);
+    if (!team) return failWith(res, 'TEAM_NOT_FOUND');
+    const org = organizerCredential();
+    if (!org) return failWith(res, 'NO_ORGANIZER');
+    const response = req.body.response;
+    const refused = (reason) => {
+      log.append(ORG_ACTOR, 'tap.failed', { teamId: team.id, purpose: 'override', reason });
+      return failWith(res, 'NOT_ORG_KEY');
+    };
+    if (response.id !== org.id) return refused('wrong_credential');
+    let counter;
+    try {
+      counter = wa.counterCheck(org, response);
+    } catch (_) {
+      return refused('verify_failed');
+    }
+    if (counter.regressed) {
+      log.append(ORG_ACTOR, 'tap.counter_regression', { teamId: null, credentialId: org.id, storedCounter: org.counter, receivedCounter: counter.received });
+      return failWith(res, 'COUNTER_BACKWARDS');
+    }
+    // Recompute from stored values; never accept a challenge from the client.
+    const expected = canon.b64u(canon.overrideAuthChallenge(Buffer.from(rec.overrideHash, 'hex'), rec.nonce));
+    let newCounter;
+    try {
+      newCounter = await wa.verifyAuthentication(response, expected, org);
+    } catch (err) {
+      console.error('[override] organizer assertion did not verify:', err.message);
+      return refused('verify_failed');
+    }
+    org.counter = newCounter;
+
+    // The authorization covers this team, its current key, and this reason.
+    const problem = overrideStateProblem(team);
+    if (problem) return failWith(res, problem.code, problem.vars);
+    if (canon.overrideHash(team.id, team.credentialId, rec.reason).toString('hex') !== rec.overrideHash) return failWith(res, 'OVERRIDE_EXPIRED');
+
+    const nonce2 = crypto.randomBytes(32);
+    const regChallenge = canon.overrideRegChallenge(Buffer.from(team.rosterHash, 'hex'), Buffer.from(rec.overrideHash, 'hex'), nonce2); // 6.8 step 3
+    const options = await wa.registrationOptions(
+      { ownerId: team.id, userName: team.name, mode: team.mode, excludeCredentials: wa.excludeList() },
+      regChallenge
+    );
+    const next = wa.newPending('override', {
+      teamId: team.id,
+      challenge: canon.b64u(regChallenge),
+      nonce: nonce2,
+      rosterHash: team.rosterHash,
+      overrideHash: rec.overrideHash,
+      reason: rec.reason,
+      keyFields: rec.keyFields,
+    });
+    res.json({ ok: true, ceremonyId: next.id, options });
+  }
+);
+
+router.post(
+  '/override/verify',
+  sessions.requireOrg,
+  body({
+    ceremonyId: { type: 'string', label: 'Ceremony ID', min: 1, max: 64 },
+    response: { type: 'object', label: 'Key response' },
+  }),
+  async (req, res) => {
+    const taken = wa.takePending(req.body.ceremonyId, 'override'); // deleted before verify (L4)
+    if (!taken.rec) return failWith(res, 'OVERRIDE_EXPIRED');
+    const rec = taken.rec;
+    const expected = canon.b64u(canon.overrideRegChallenge(Buffer.from(rec.rosterHash, 'hex'), Buffer.from(rec.overrideHash, 'hex'), rec.nonce));
+    let info;
+    try {
+      info = await wa.verifyRegistration(req.body.response, expected);
+    } catch (err) {
+      console.error('[override] registration did not verify:', err.message);
+      return failWith(res, 'SERVER');
+    }
+
+    // After the last await: every check and every write in one block.
+    const team = store.teams.get(rec.teamId);
+    if (!team) return failWith(res, 'TEAM_NOT_FOUND');
+    const problem = overrideStateProblem(team);
+    if (problem) return failWith(res, problem.code, problem.vars);
+    if (currentRosterHash(team).toString('hex') !== team.rosterHash) return failWith(res, 'OVERRIDE_EXPIRED');
+    const oldCred = store.credentials.get(team.credentialId);
+    if (!oldCred || canon.overrideHash(team.id, oldCred.id, rec.reason).toString('hex') !== rec.overrideHash) return failWith(res, 'OVERRIDE_EXPIRED');
+    if (store.credentials.has(info.credential.id)) return failWith(res, 'KEY_TAKEN'); // ACTIVE or REVOKED, the lost key too
+    const label = wa.teamLabel(team.mode, info, req.body.response);
+    if (!label) return failWith(res, 'NOT_A_KEY');
+
+    const cred = wa.credentialRecord(info, req.body.response, { ownerKind: 'team', ownerId: team.id, label });
+    const k = rec.keyFields;
+    const entry = log.append(ORG_ACTOR, 'team.override', {
+      teamId: team.id,
+      teamName: team.name,
+      oldCredentialId: oldCred.id,
+      credentialId: cred.id,
+      label,
+      keySource: k.keySource,
+      tagColor: k.tagColor,
+      tagLabel: k.tagLabel,
+      keyFingerprint: cred.fingerprint,
+      reason: rec.reason,
+      rosterHash: team.rosterHash,
+    });
+    store.credentials.set(cred.id, cred);
+    oldCred.state = 'REVOKED';
+    team.credentialId = cred.id;
+    team.keySource = k.keySource;
+    team.tagColor = k.tagColor;
+    team.tagLabel = k.tagLabel;
+    team.overrideCount += 1;
+    team.lastOverride = { at: entry.ts, seq: entry.seq, reason: rec.reason };
+    // FR-41 step 5: every session of this team ends, and every open tap or
+    // sign ceremony for this team is deleted. State, prompt, and revealedAt stay.
+    for (const [sid, s] of store.sessions) if (s.teamId === team.id) store.sessions.delete(sid);
+    for (const [id, p] of store.pending) if (p.teamId === team.id) store.pending.delete(id);
     res.json({ ok: true, team: teamRow(team) });
   }
 );

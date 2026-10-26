@@ -58,11 +58,11 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | src/validate.js | Schema checks, unknown field rejection, handle and URL rules, rate limiter | Read the store |
 | src/canon.js | `norm`, `canon`, `sha256`, challenge and hash derivations | Use JSON.stringify on objects without key sorting |
 | src/log.js | Append and verify the hash chained action log | Store prompt text, secret text, or chat text |
-| scripts/verify-log.js | Verify an exported log file from the command line | Import anything from the running server |
+| scripts/verify-log.js | Verify an exported log file from the command line and print one OVERRIDE line per key override | Import anything from the running server |
 | src/sessions.js | Mint, read, expire, and revoke sessions, set cookies | Accept a session ID that fails the HMAC check |
 | src/webauthn.js | Wrap SimpleWebAuthn calls and the pending ceremony map | Reuse a challenge |
 | src/routes/org.js | Organizer setup, login, console, prompts, assign, event information (bundle), reset, seed | Answer a request without an organizer session |
-| src/routes/enroll.js (override added in T11) | Draft teams (also used by the demo seed), key source, enroll ceremony, roster removal, console team rows with submission columns, override ceremony | Put a member on a roster (members join through tap.js), or finish an override without the organizer tap |
+| src/routes/enroll.js | Draft teams (also used by the demo seed), key source, enroll ceremony, roster removal, console team rows with submission columns, the OVERRIDE ceremony (options, organizer authorize, replacement verify) | Put a member on a roster (members join through tap.js), or finish an override without the organizer tap |
 | src/routes/tap.js | Team tap ceremony, join (T12), reveal, client failure report | Mint a session without a verified assertion |
 | src/routes/team.js | Read tier team room with its submission summary and FAQ mode, member select, download | Take a team ID from the request |
 | src/routes/sign.js | Sign ceremony, submission creation with the signed roster copy, repo owner check | Create a submission without a verified assertion |
@@ -77,11 +77,11 @@ Keep this table current. A row marked "(planned T#)" means the file does not exi
 | public/index.html | Landing page with links | Contain event data |
 | public/favicon.svg, public/favicon.ico, public/apple-touch-icon.png | The QuackTrack icon for browser tabs and phone home screens | Contain event data |
 | public/css/app.css | All styles, including the fail banner | Set error text below 32px |
-| public/js/api.js | `api()` fetch wrapper and `showFail()` banner | Use innerHTML with server data |
+| public/js/api.js | `api()` fetch wrapper, `showFail()` banner, banner only sentences, team tap helper | Use innerHTML with server data |
 | public/privacy.html | Plain words privacy policy: what is stored, never stored, memory only, contact | Claim anything the code does not do |
 | public/support.html | Plain words help: organizer desk, lost or broken key, common problems, GitHub Issues | Link to the organizer console |
 | public/setup.html, public/js/setup.js | Organizer first credential enrollment | Work without the setup token |
-| public/console.html, public/js/console.js | Organizer console: one second polling, at a glance strip, team rows, log as plain sentences, FAQ status, unanswered questions, event information form, Reset, Load demo data | Cache data in localStorage |
+| public/console.html, public/js/console.js | Organizer console: one second polling, at a glance strip, team rows, Replace key (OVERRIDE), log as plain sentences, FAQ status, unanswered questions, event information form, Reset, Load demo data | Cache data in localStorage |
 | public/team.html, public/js/team.js | Team picker and tap in | Show anything about a prompt |
 | public/room.html, public/js/room.js | Team room, sign form, locked signing panel, receipt moment, `QT_TEST.tamperSign`, FAQ box and searchable event information | Render any field with innerHTML |
-| public/receipt.html, public/js/receipt.js | Public receipt and its verification checks | Show the prompt |
+| public/receipt.html, public/js/receipt.js | Public receipt, its verification checks, and the OVERRIDE line when the key was replaced before signing | Show the prompt |

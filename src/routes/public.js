@@ -116,6 +116,9 @@ router.get('/receipt/:id', query({}), async (req, res) => {
       signedAt: sub.signedAt,
       logSeq: sub.logSeq,
       logEntryHash: sub.logEntryHash,
+      // FR-30: a key replaced before signing shows with its log entry. An
+      // override is refused after SUBMITTED, so any override came first.
+      overrideSeq: team.lastOverride && team.lastOverride.seq < sub.logSeq ? team.lastOverride.seq : null,
     },
     checks,
   });

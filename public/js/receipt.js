@@ -51,6 +51,9 @@
     document.title = `Receipt ${r.shortHash}: QuackTrack`;
     $('r-team').textContent = r.teamName;
     $('r-hash').textContent = `Receipt ${r.shortHash}`;
+    const override = $('r-override');
+    override.hidden = r.overrideSeq === null;
+    override.textContent = r.overrideSeq === null ? '' : `OVERRIDE: this team's key was replaced by the organizer before signing (log entry ${r.overrideSeq}).`;
 
     $('checks').replaceChildren(
       checkRow('Content hash matches', data.checks.contentHash),

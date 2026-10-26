@@ -59,7 +59,14 @@ function main(argv) {
   } catch (_) {
     entries = null; // unreadable or not JSON: reported as broken at entry 0
   }
-  return report(verifyChain(entries)) ? 0 : 1;
+  const ok = report(verifyChain(entries));
+  // SDS.md section 8 step 6: every override stands out in a printed check.
+  if (Array.isArray(entries)) {
+    for (const e of entries) {
+      if (e && e.action === 'team.override' && e.data) console.log(`OVERRIDE at entry ${e.seq}: ${e.data.teamName}.`);
+    }
+  }
+  return ok ? 0 : 1;
 }
 
 process.exitCode = main(process.argv);

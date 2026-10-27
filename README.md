@@ -7,11 +7,12 @@
 <p align="center"><strong>One security key is your team's identity. Tap to reveal your prompt. Tap to sign your submission. Nobody can fake either.</strong></p>
 
 <p align="center">
-  Live: <a href="https://quacktrack-987o.onrender.com">quacktrack-987o.onrender.com</a> &middot;
   Demo video: <a href="https://www.youtube.com/watch?v=JpW88ii5Obc">YouTube, 3 minutes</a> &middot;
-  Built at MLH Hacktoberfest Hack Day Eugene x QuackHacks, October 25, 2026 &middot;
+  Built in one day at MLH Hacktoberfest Hack Day Eugene x QuackHacks, October 25, 2026 &middot;
   MIT license
 </p>
+
+> **Status: finished and archived.** QuackTrack was built and submitted in one day on October 25, 2026, and it works as described. The hosted copy on Render was taken down after the event, so there is no live site. Everything runs on your own laptop in two minutes (below), and the hosted mode section tells you how to put up your own copy. The repository is archived, so it is read-only; fork it if you want to build on it.
 
 ---
 
@@ -140,8 +141,8 @@ The repo has a Render Blueprint, `render.yaml`. It holds no secret values.
 
 1. In the Render dashboard click **New**, then **Blueprint**, and connect this repo. Render reads `render.yaml`: one web service named `quacktrack` on the `0.5c-512mb` instance (about $7 a month) in Oregon, built with `npm ci` and started with `npm start`.
 2. Render asks for three values (never put them in a file in the repo):
-   - `ORIGIN`: `https://quacktrack-987o.onrender.com`
-   - `RP_ID`: `quacktrack-987o.onrender.com`
+   - `ORIGIN`: `https://<your-service>.onrender.com`
+   - `RP_ID`: `<your-service>.onrender.com`
    - `GEMINI_API_KEY`: your own Gemini key
 
    Render makes `SESSION_SECRET` itself, and `AI_PROVIDER` is already `gemini`.
@@ -232,6 +233,12 @@ After the event, reset every returned key with its maker's tool before the next 
 
 - `QT_TEST.tamperSign('changed')` (SRS.md INV-14) reads the values in the sign form, so fill the form first. Browsers only open a key prompt for a page that has focus, so run it from the developer console with a delay and then click a blank part of the page: `setTimeout(() => QT_TEST.tamperSign('changed'), 3000)`. Without the delay the browser refuses at once, with no prompt, and the room shows "The submission was not signed. Nothing was submitted."
 - After a team has submitted, the room shows the receipt link instead of the form. To check "already submitted" (INV-10), send the same request the Sign button sends from that team's room console: `api('/api/sign/options', { body: { teamId: '<team ID from the console log>', projectName: 'x', repoUrl: 'https://github.com/owner/repo', commitSha: 'a'.repeat(40), description: 'x', declared: true } })`.
+
+## What we would do next
+
+- Teams create themselves with a passkey and the organizer approves them, so the console needs one key type (parked in PRODUCT.md section 8 with a design sketch).
+- A small form for the event information, so an organizer never has to type the `# ` section markers.
+- Key return tracking on the console, instead of the paper key pool sheet.
 
 ## Not built in this version
 
